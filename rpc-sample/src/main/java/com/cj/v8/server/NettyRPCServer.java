@@ -1,13 +1,14 @@
-package com.cj.v7.server;
+package com.cj.v8.server;
 
-import com.cj.v7.provider.ServiceProvider;
-import com.cj.v7.server.handler.NettyRPCServerHandler;
+import com.cj.v8.codec.RPCDecoder;
+import com.cj.v8.codec.RPCEncoder;
+import com.cj.v8.provider.ServiceProvider;
+import com.cj.v8.server.handler.NettyRPCServerHandler;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
-import io.netty.handler.codec.json.JsonObjectDecoder;
 import io.netty.handler.codec.serialization.ObjectDecoder;
 import io.netty.handler.codec.serialization.ObjectEncoder;
 import org.slf4j.Logger;
@@ -31,12 +32,12 @@ public class NettyRPCServer extends AbstractRPCServer {
                 .childHandler(new ChannelInitializer<NioSocketChannel>() {
                     @Override
                     protected void initChannel(NioSocketChannel nioSocketChannel) throws Exception {
-                        // jdk 解码器
-                        nioSocketChannel.pipeline().addLast(new ObjectDecoder(Class::forName));
+                        // 解码器
+                        nioSocketChannel.pipeline().addLast(new RPCDecoder());
                         // 管道数据处理器（rpcRequest）
                         nioSocketChannel.pipeline().addLast(new NettyRPCServerHandler(getServiceProvider()));
-                        // jdk 编码器
-                        nioSocketChannel.pipeline().addLast(new ObjectEncoder());
+                        // 编码器
+                        nioSocketChannel.pipeline().addLast(new RPCEncoder());
                     }
                 })
                 .bind(getPort());

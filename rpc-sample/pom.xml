@@ -28,7 +28,6 @@
             <artifactId>slf4j-api</artifactId>
             <version>2.0.5</version>
         </dependency>
-
         <!-- logback 实现 -->
         <dependency>
             <groupId>ch.qos.logback</groupId>
@@ -39,6 +38,18 @@
             <groupId>io.netty</groupId>
             <artifactId>netty-all</artifactId>
             <version>4.1.94.Final</version>
+        </dependency>
+        <!-- fastjson -->
+        <dependency>
+            <groupId>com.alibaba.fastjson2</groupId>
+            <artifactId>fastjson2</artifactId>
+            <version>2.0.35</version>
+        </dependency>
+        <!-- kryo -->
+        <dependency>
+            <groupId>com.esotericsoftware</groupId>
+            <artifactId>kryo</artifactId>
+            <version>4.0.2</version>
         </dependency>
 
     </dependencies>
