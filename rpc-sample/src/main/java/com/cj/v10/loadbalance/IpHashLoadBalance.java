@@ -1,7 +1,6 @@
 package com.cj.v10.loadbalance;
 
 import com.cj.v10.dto.RPCRequest;
-import com.cj.v10.registry.ZkServiceRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

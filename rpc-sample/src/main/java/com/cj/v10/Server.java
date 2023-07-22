@@ -1,6 +1,5 @@
 package com.cj.v10;
 
-import com.cj.v10.loadbalance.RandomLoadBalance;
 import com.cj.v10.loadbalance.RoundLoadBalance;
 import com.cj.v10.provider.ServiceProvider;
 import com.cj.v10.provider.impl.DefaultServiceProvider;

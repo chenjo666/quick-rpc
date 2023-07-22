@@ -2,7 +2,6 @@ package com.cj.v10.loadbalance;
 
 import com.cj.v10.dto.RPCRequest;
 
-import java.net.InetSocketAddress;
 import java.util.List;
 
 /**
