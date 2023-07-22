@@ -51,6 +51,11 @@
             <artifactId>kryo</artifactId>
             <version>4.0.2</version>
         </dependency>
-
+        <!-- zookeeper -->
+        <dependency>
+            <groupId>org.apache.curator</groupId>
+            <artifactId>curator-recipes</artifactId>
+            <version>5.5.0</version>
+        </dependency>
     </dependencies>
 </project>
