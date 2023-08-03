@@ -15,37 +15,40 @@ import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.timeout.IdleStateHandler;
+import lombok.Data;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.InetSocketAddress;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 
+@Data
 public class NettyRpcClient extends AbstractRpcClient {
     private static final Logger logger = LoggerFactory.getLogger(NettyRpcClient.class);
     private final Bootstrap bootstrap;
     private final Map<InetSocketAddress, Channel> channels;
+    private final Map<Channel, InetSocketAddress> channelsHelper;
     private final RpcResponseHandler rpcResponseHandler;
     public NettyRpcClient() {
         super();
         this.rpcResponseHandler = new RpcResponseHandler();
         this.channels = new ConcurrentHashMap<>();
+        this.channelsHelper = new ConcurrentHashMap<>();
         this.bootstrap = new Bootstrap()
                 .group(new NioEventLoopGroup())
                 .channel(NioSocketChannel.class)
                 .handler(new ChannelInitializer<NioSocketChannel>() {
                     @Override
                     protected void initChannel(NioSocketChannel nioSocketChannel) {
-                        // 心跳检测
-                        nioSocketChannel.pipeline().addLast(new IdleStateHandler(0, 5, 0));
-                        // 心跳触发器
-                        nioSocketChannel.pipeline().addLast(new RpcHeartbeatTrigger());
+                        // 【心跳检测 + 断线重连】5s 达到写空闲，发送心跳 ping，60s 达到读空闲，断线重连
+                        nioSocketChannel.pipeline().addLast(new IdleStateHandler(60, 5, 0));
                         // 解码器
                         nioSocketChannel.pipeline().addLast(new RPCDecoder());
+                        // 心跳触发器
+                        nioSocketChannel.pipeline().addLast(new RpcHeartbeatTrigger(NettyRpcClient.this));
                         // 入站处理器
                         nioSocketChannel.pipeline().addLast(rpcResponseHandler);
                         // 编码器
@@ -63,6 +66,7 @@ public class NettyRpcClient extends AbstractRpcClient {
                         .sync()
                         .channel();
                 channels.put(inetSocketAddress, channel);
+                channelsHelper.put(channel, inetSocketAddress);
                 logger.info("Netty 客户端连接服务: {}", inetSocketAddress);
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);

@@ -1,6 +1,10 @@
 package com.cj.v12.remoting.netty.handler;
 
-import com.cj.v12.remoting.dto.RpcHeartbeat;
+import com.cj.v12.constant.RpcConstant;
+import com.cj.v12.remoting.dto.RpcMessage;
+import com.cj.v12.remoting.dto.RpcPing;
+import com.cj.v12.remoting.dto.RpcPong;
+import com.cj.v12.serializer.Serializer;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.timeout.IdleState;
@@ -8,15 +12,28 @@ import io.netty.handler.timeout.IdleStateEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class RpcHeartbeatHandler extends SimpleChannelInboundHandler<RpcHeartbeat> {
+public class RpcHeartbeatHandler extends SimpleChannelInboundHandler<RpcPing> {
 
     private static final Logger logger = LoggerFactory.getLogger(RpcHeartbeatHandler.class);
 
-    // 心跳消息
+    // 心跳消息处理
     @Override
-    protected void channelRead0(ChannelHandlerContext ctx, RpcHeartbeat rpcHeartbeat) throws Exception {
+    protected void channelRead0(ChannelHandlerContext ctx, RpcPing rpcPing) throws Exception {
         // 处理心跳消息
-        logger.info("收到心跳消息: [{}]", rpcHeartbeat.getMessage());
+        logger.info("服务端收到 ping: [{}]", rpcPing.getMessage());
+        // 返回一个 pong
+        RpcPong pong = new RpcPong();
+        // 构造发送数据
+        RpcMessage rpcMessage = RpcMessage.builder()
+                .magicNum(RpcConstant.MESSAGE_MAGIC_NUM)
+                .version(RpcConstant.MESSAGE_VERSION)
+                .messageType(RpcConstant.MESSAGE_TYPE_PONG)
+                .serializeTpe(Serializer.SERIALIZER_KRYO)
+                .data(pong)
+                .build();
+
+        ctx.channel().writeAndFlush(rpcMessage);
+        logger.info("服务端响应 pong: [{}]", pong);
     }
 
     // 心跳事件

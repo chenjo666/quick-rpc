@@ -9,5 +9,6 @@ public interface RpcConstant {
 
     byte MESSAGE_TYPE_REQUEST = 0;
     byte MESSAGE_TYPE_RESPONSE = 1;
-    byte MESSAGE_TYPE_HEARTBEAT = 2;
+    byte MESSAGE_TYPE_PING = 2;
+    byte MESSAGE_TYPE_PONG = 3;
 }

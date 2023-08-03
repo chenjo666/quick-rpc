@@ -4,14 +4,13 @@ import lombok.Data;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-
 @Data
-public class RpcHeartbeat {
+public class RpcPing {
     private final String message;
 
-    public RpcHeartbeat() {
+    public RpcPing() {
         try {
-            message = "HEARTBEAT:" + InetAddress.getLocalHost().getHostAddress();
+            message = "ping: " + InetAddress.getLocalHost().getHostAddress();
         } catch (UnknownHostException e) {
             throw new RuntimeException(e);
         }

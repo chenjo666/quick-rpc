@@ -1,6 +1,5 @@
 package com.cj.v12.serializer;
 
-import com.cj.v12.remoting.dto.RpcHeartbeat;
 import com.cj.v12.remoting.dto.RpcMessage;
 import com.cj.v12.remoting.dto.RpcRequest;
 import com.esotericsoftware.kryo.Kryo;
@@ -17,7 +16,6 @@ public class KryoSerializer implements Serializer {
     static {
         kryo.register(RpcRequest.class);
         kryo.register(RpcMessage.class);
-        kryo.register(RpcHeartbeat.class);
     }
     @Override
     public <T> byte[] serialize(T object) {

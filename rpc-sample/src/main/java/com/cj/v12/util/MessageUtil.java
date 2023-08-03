@@ -1,8 +1,6 @@
 package com.cj.v12.util;
 
-import com.cj.v12.remoting.dto.RpcHeartbeat;
-import com.cj.v12.remoting.dto.RpcRequest;
-import com.cj.v12.remoting.dto.RpcResponse;
+import com.cj.v12.remoting.dto.*;
 
 public class MessageUtil {
 
@@ -13,7 +11,9 @@ public class MessageUtil {
             case 1:
                 return RpcResponse.class;
             case 2:
-                return RpcHeartbeat.class;
+                return RpcPing.class;
+            case 3:
+                return RpcPong.class;
             default:
                 return null;
         }

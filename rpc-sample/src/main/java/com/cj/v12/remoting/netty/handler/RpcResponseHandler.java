@@ -1,6 +1,7 @@
 package com.cj.v12.remoting.netty.handler;
 
 import com.cj.v12.remoting.dto.RpcResponse;
+import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import lombok.AllArgsConstructor;
@@ -11,6 +12,7 @@ import org.slf4j.LoggerFactory;
 import java.util.concurrent.CompletableFuture;
 
 @Data
+@ChannelHandler.Sharable
 public class RpcResponseHandler extends SimpleChannelInboundHandler<RpcResponse> {
     private CompletableFuture<RpcResponse> completableFuture;
     private static final Logger logger = LoggerFactory.getLogger(RpcResponseHandler.class);
