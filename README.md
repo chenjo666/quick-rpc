@@ -1,7 +1,6 @@
 # quick-rpc
 
 从 0 构建一个 RPC，下述带有每一个版本的代码开发过程：
-
 - [quick-rpc](#quick-rpc)
   - [RPC 概述](#rpc-概述)
   - [RPC 版本](#rpc-版本)
