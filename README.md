@@ -51,137 +51,137 @@ RPC的工作方式通常涉及两个主要角色：客户端和服务器。客�
 
 思路：客户端与服务端建立 TCP Socket 连接，模拟一次服务调用过程。
 
-- 依赖：暂且引入两个依赖包，lombok 简化实体类代码，logback 用于日志输出
+依赖：暂且引入两个依赖包，lombok 简化实体类代码，logback 用于日志输出
 
-  ```xml
-  <dependency>
-      <groupId>org.projectlombok</groupId>
-      <artifactId>lombok</artifactId>
-      <version>1.18.28</version>
-  </dependency>
-  <!-- SLF4J API -->
-  <dependency>
-      <groupId>org.slf4j</groupId>
-      <artifactId>slf4j-api</artifactId>
-      <version>2.0.5</version>
-  </dependency>
-  <!-- logback 实现 -->
-  <dependency>
-      <groupId>ch.qos.logback</groupId>
-      <artifactId>logback-classic</artifactId>
-      <version>1.4.7</version>
-  </dependency>
-  ```
+```xml
+<dependency>
+    <groupId>org.projectlombok</groupId>
+    <artifactId>lombok</artifactId>
+    <version>1.18.28</version>
+</dependency>
+<!-- SLF4J API -->
+<dependency>
+    <groupId>org.slf4j</groupId>
+    <artifactId>slf4j-api</artifactId>
+    <version>2.0.5</version>
+</dependency>
+<!-- logback 实现 -->
+<dependency>
+    <groupId>ch.qos.logback</groupId>
+    <artifactId>logback-classic</artifactId>
+    <version>1.4.7</version>
+</dependency>
+```
 
 过程：
 
-- （1）定义一个实体 `User` 表示服务的实体对象，实现 jdk 自带的 `Serializable` 接口进行序列化，以便网络中传输
+（1）定义一个实体 `User` 表示服务的实体对象，实现 jdk 自带的 `Serializable` 接口进行序列化，以便网络中传输
 
-  ```java
-  @Data
-  @Builder
-  @NoArgsConstructor
-  @AllArgsConstructor
-  public class User implements Serializable {
-      private String id;
-      private String name;
-  }
-  ```
+```java
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+public class User implements Serializable {
+    private String id;
+    private String name;
+}
+```
 
-- （2）定义一个接口 `UserService` 表示服务接口
+（2）定义一个接口 `UserService` 表示服务接口
 
-  ```java
-  public interface UserService {
-      User getUserById(String id);
-  }
-  ```
+```java
+public interface UserService {
+    User getUserById(String id);
+}
+```
 
-- （3）定义一个实现类 `UserServiceImpl` 实现服务
+（3）定义一个实现类 `UserServiceImpl` 实现服务
 
-  ```java
-  public class UserServiceImpl implements UserService {
-      @Override
-      public User getUserById(String id) {
-          return User.builder().id(id).name("rpc").build();
-      }
-  }
-  ```
+```java
+public class UserServiceImpl implements UserService {
+    @Override
+    public User getUserById(String id) {
+        return User.builder().id(id).name("rpc").build();
+    }
+}
+```
 
-- （4）实现一个服务端 `RPCServer`，等待客户端建立连接并调用服务返回结果
+（4）实现一个服务端 `RPCServer`，等待客户端建立连接并调用服务返回结果
 
-  ```java
-  public class RPCServer {
-      private static final Logger logger = LoggerFactory.getLogger(RPCServer.class);
-      public static void main(String[] args) throws IOException {
-          // 注册服务
-          UserService userService = new UserServiceImpl();
-          ServerSocket serverSocket = new ServerSocket(8888);
-          try {
-              logger.info("服务器启动成功...");
-              // BIO 方式等待客户端连接
-              while (true) {
-                  // 进入阻塞，等待连接
-                  Socket socket = serverSocket.accept();
-                  logger.info("服务器连接成功：{}", socket);
-                  // 开启线程去处理
-                  new Thread(() -> {
-                      try {
-                          // 得到 IO 流
-                          ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream());
-                          ObjectInputStream ois = new ObjectInputStream(socket.getInputStream());
-                          // 读取数据
-                          String id = String.valueOf(ois.readInt());
-                          // 调用服务
-                          User user = userService.getUserById(id);
-                          // 返回结果
-                          oos.writeObject(user);
-                          oos.flush();
-                          logger.info("服务器发送：{}", user);
-                          // 关闭通道
-                          oos.close();
-                          ois.close();
-                      } catch (IOException e) {
-                          logger.info("客户端连接错误...");
-                          throw new RuntimeException(e);
-                      }
-                  }).start();
-              }
-          } catch (IOException e) {
-              logger.info("服务器启动失败...");
-              throw new RuntimeException(e);
-          }
-      }
-  }
-  ```
+```java
+public class RPCServer {
+    private static final Logger logger = LoggerFactory.getLogger(RPCServer.class);
+    public static void main(String[] args) throws IOException {
+        // 注册服务
+        UserService userService = new UserServiceImpl();
+        ServerSocket serverSocket = new ServerSocket(8888);
+        try {
+            logger.info("服务器启动成功...");
+            // BIO 方式等待客户端连接
+            while (true) {
+                // 进入阻塞，等待连接
+                Socket socket = serverSocket.accept();
+                logger.info("服务器连接成功：{}", socket);
+                // 开启线程去处理
+                new Thread(() -> {
+                    try {
+                        // 得到 IO 流
+                        ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream());
+                        ObjectInputStream ois = new ObjectInputStream(socket.getInputStream());
+                        // 读取数据
+                        String id = String.valueOf(ois.readInt());
+                        // 调用服务
+                        User user = userService.getUserById(id);
+                        // 返回结果
+                        oos.writeObject(user);
+                        oos.flush();
+                        logger.info("服务器发送：{}", user);
+                        // 关闭通道
+                        oos.close();
+                        ois.close();
+                    } catch (IOException e) {
+                        logger.info("客户端连接错误...");
+                        throw new RuntimeException(e);
+                    }
+                }).start();
+            }
+        } catch (IOException e) {
+            logger.info("服务器启动失败...");
+            throw new RuntimeException(e);
+        }
+    }
+}
+```
 
-- （5）实现一个客户端 `RPCClient`，建立服务端连接并接收结果
+（5）实现一个客户端 `RPCClient`，建立服务端连接并接收结果
 
-  ```java
-  public class RPCClient {
-      private static final Logger logger = LoggerFactory.getLogger(RPCClient.class);
-      public static void main(String[] args) throws IOException, ClassNotFoundException {
-          // 连接服务器
-          Socket socket = new Socket(InetAddress.getLocalHost(), 8888);
-          logger.info("客户端已经启动...");
-          if (socket.isConnected()) {
-              // 得到 IO 流
-              ObjectOutputStream objectOutputStream = new ObjectOutputStream(socket.getOutputStream());
-              ObjectInputStream objectInputStream = new ObjectInputStream(socket.getInputStream());
-              // 传入数据
-              objectOutputStream.writeInt(1);
-              objectOutputStream.flush();
-              // 得到数据
-              User user = (User) objectInputStream.readObject();
-              logger.info("客户端收到：{}", user);
-              // 关闭 IO 流
-              objectInputStream.close();
-              objectOutputStream.close();
-          }
-          // 关闭连接
-          socket.close();
-      }
-  }
-  ```
+```java
+public class RPCClient {
+    private static final Logger logger = LoggerFactory.getLogger(RPCClient.class);
+    public static void main(String[] args) throws IOException, ClassNotFoundException {
+        // 连接服务器
+        Socket socket = new Socket(InetAddress.getLocalHost(), 8888);
+        logger.info("客户端已经启动...");
+        if (socket.isConnected()) {
+            // 得到 IO 流
+            ObjectOutputStream objectOutputStream = new ObjectOutputStream(socket.getOutputStream());
+            ObjectInputStream objectInputStream = new ObjectInputStream(socket.getInputStream());
+            // 传入数据
+            objectOutputStream.writeInt(1);
+            objectOutputStream.flush();
+            // 得到数据
+            User user = (User) objectInputStream.readObject();
+            logger.info("客户端收到：{}", user);
+            // 关闭 IO 流
+            objectInputStream.close();
+            objectOutputStream.close();
+        }
+        // 关闭连接
+        socket.close();
+    }
+}
+```
 
 结果：
 
@@ -201,178 +201,178 @@ RPC的工作方式通常涉及两个主要角色：客户端和服务器。客�
 
 过程：
 
-- （1）统一请求 `RPCRequest`
+（1）统一请求 `RPCRequest`
 
-  ```java
-  @Data
-  @Builder
-  public class RPCRequest implements Serializable {
-      // 服务接口名
-      private String interfaceName;
-      // 服务方法名
-      private String methodName;
-      // 服务方法参数类型
-      private Class<?>[] type;
-      // 服务方法参数列表
-      private Object[] args;
-  }
-  ```
+```java
+@Data
+@Builder
+public class RPCRequest implements Serializable {
+    // 服务接口名
+    private String interfaceName;
+    // 服务方法名
+    private String methodName;
+    // 服务方法参数类型
+    private Class<?>[] type;
+    // 服务方法参数列表
+    private Object[] args;
+}
+```
 
-- （2）统一响应 `RPCResponse`
+（2）统一响应 `RPCResponse`
 
-  ```java
-  @Data
-  @Builder
-  public class RPCResponse implements Serializable {
-      // 响应状态码
-      private Integer code;
-      // 响应消息体
-      private String message;
-      // 响应数据
-      private Object data;
-  
-      // 成功
-      public static RPCResponse ok(Object data) {
-          return RPCResponse.builder().code(200).message("success").data(data).build();
-      }
-      // 失败
-      public static RPCResponse error() {
-          return RPCResponse.builder().code(500).message("error").build();
-      }
-  }
-  ```
+```java
+@Data
+@Builder
+public class RPCResponse implements Serializable {
+    // 响应状态码
+    private Integer code;
+    // 响应消息体
+    private String message;
+    // 响应数据
+    private Object data;
 
-- （3）拓展服务方法 `UserService`
+    // 成功
+    public static RPCResponse ok(Object data) {
+        return RPCResponse.builder().code(200).message("success").data(data).build();
+    }
+    // 失败
+    public static RPCResponse error() {
+        return RPCResponse.builder().code(500).message("error").build();
+    }
+}
+```
 
-  ```java
-  public interface UserService {
-      // 查询用户
-      User getUserById(String id);
-      // 更新用户名
-      User updateUserName(String id, String name);
-  }
-  ```
+（3）拓展服务方法 `UserService`
 
-- （4）实现服务方法 `UserServiceImpl`
+```java
+public interface UserService {
+    // 查询用户
+    User getUserById(String id);
+    // 更新用户名
+    User updateUserName(String id, String name);
+}
+```
 
-  ```java
-  public class UserServiceImpl implements UserService {
-      @Override
-      public User getUserById(String id) {
-          return User.builder().id(id).name("rpc").build();
-      }
-  
-      @Override
-      public User updateUserName(String id, String name) {
-          return User.builder().id(id).name(name).build();
-      }
-  }
-  ```
+（4）实现服务方法 `UserServiceImpl`
 
-- （5）服务端 `RPCServer` 利用反射解析客户端请求
+```java
+public class UserServiceImpl implements UserService {
+    @Override
+    public User getUserById(String id) {
+        return User.builder().id(id).name("rpc").build();
+    }
 
-  ```java
-  import com.cj.v1.UserService;
-  import com.cj.v1.UserServiceImpl;
-  import org.slf4j.Logger;
-  import org.slf4j.LoggerFactory;
-  
-  import java.io.IOException;
-  import java.io.ObjectInputStream;
-  import java.io.ObjectOutputStream;
-  import java.lang.reflect.InvocationTargetException;
-  import java.lang.reflect.Method;
-  import java.net.ServerSocket;
-  import java.net.Socket;
-  
-  public class RPCServer {
-      private static final Logger logger = LoggerFactory.getLogger(RPCServer.class);
-      public static void main(String[] args) throws IOException {
-          // 注册服务
-          UserService userService = new UserServiceImpl();
-          ServerSocket serverSocket = new ServerSocket(8888);
-          try {
-              logger.info("服务器启动成功...");
-              // BIO 方式等待客户端连接
-              while (true) {
-                  // 进入阻塞，等待连接
-                  Socket socket = serverSocket.accept();
-                  logger.info("服务器连接成功：{}", socket);
-                  // 开启线程去处理
-                  new Thread(() -> {
-                      try {
-                          // 得到 IO 流
-                          ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream());
-                          ObjectInputStream ois = new ObjectInputStream(socket.getInputStream());
-  
-                          **// 请求对象
-                          RPCRequest request = (RPCRequest) ois.readObject();
-                          // 反射调用方法
-                          Method method = userService.getClass().getMethod(request.getMethodName(), request.getArgsTypes());
-                          Object obj = method.invoke(userService, request.getArgs());
-                          // 封装结果
-                          RPCResponse response = RPCResponse.ok(obj);
-                          // 响应结果
-                          oos.writeObject(response);**
-  
-                          oos.flush();
-                          logger.info("服务器发送：{}", response);
-                          // 关闭通道
-                          oos.close();
-                          ois.close();
-                      } catch (IOException | ClassNotFoundException e) {
-                          logger.info("客户端连接错误...");
-                          throw new RuntimeException(e);
-                      } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
-                          throw new RuntimeException(e);
-                      }
-                  }).start();
-              }
-          } catch (IOException e) {
-              logger.info("服务器启动失败...");
-              throw new RuntimeException(e);
-          }
-      }
-  }
-  ```
+    @Override
+    public User updateUserName(String id, String name) {
+        return User.builder().id(id).name(name).build();
+    }
+}
+```
 
-- （6）客户端 `RPCClient` 构造请求
+（5）服务端 `RPCServer` 利用反射解析客户端请求
 
-  ```java
-  public class RPCClient {
-      private static final Logger logger = LoggerFactory.getLogger(RPCClient.class);
-      public static void main(String[] args) throws IOException, ClassNotFoundException, NoSuchMethodException {
-          // 连接服务器
-          Socket socket = new Socket(InetAddress.getLocalHost(), 8888);
-          logger.info("客户端已经启动...");
-          if (socket.isConnected()) {
-              // 得到 IO 流
-              ObjectOutputStream objectOutputStream = new ObjectOutputStream(socket.getOutputStream());
-              ObjectInputStream objectInputStream = new ObjectInputStream(socket.getInputStream());
-  
-              **// 构造请求
-              RPCRequest request = RPCRequest.builder()
-                      .interfaceName(UserService.class.getName())
-                      .methodName(UserService.class.getDeclaredMethod("updateUserName", String.class, String.class).getName())
-                      .args(new Object[]{"1", "v2 rpc"})
-                      .argsTypes(new Class[]{String.class, String.class})
-                      .build();
-              // 传入请求
-              objectOutputStream.writeObject(request);
-              objectOutputStream.flush();
-              // 得到数据
-              RPCResponse response = (RPCResponse) objectInputStream.readObject();
-              logger.info("客户端收到：{}", response);**
-  
-              // 关闭 IO 流
-              objectInputStream.close();
-              objectOutputStream.close();
-          }
-          // 关闭连接
-          socket.close();
-      }
-  }
-  ```
+```java
+import com.cj.v1.UserService;
+import com.cj.v1.UserServiceImpl;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.net.ServerSocket;
+import java.net.Socket;
+
+public class RPCServer {
+    private static final Logger logger = LoggerFactory.getLogger(RPCServer.class);
+    public static void main(String[] args) throws IOException {
+        // 注册服务
+        UserService userService = new UserServiceImpl();
+        ServerSocket serverSocket = new ServerSocket(8888);
+        try {
+            logger.info("服务器启动成功...");
+            // BIO 方式等待客户端连接
+            while (true) {
+                // 进入阻塞，等待连接
+                Socket socket = serverSocket.accept();
+                logger.info("服务器连接成功：{}", socket);
+                // 开启线程去处理
+                new Thread(() -> {
+                    try {
+                        // 得到 IO 流
+                        ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream());
+                        ObjectInputStream ois = new ObjectInputStream(socket.getInputStream());
+
+                        **// 请求对象
+                        RPCRequest request = (RPCRequest) ois.readObject();
+                        // 反射调用方法
+                        Method method = userService.getClass().getMethod(request.getMethodName(), request.getArgsTypes());
+                        Object obj = method.invoke(userService, request.getArgs());
+                        // 封装结果
+                        RPCResponse response = RPCResponse.ok(obj);
+                        // 响应结果
+                        oos.writeObject(response);**
+
+                        oos.flush();
+                        logger.info("服务器发送：{}", response);
+                        // 关闭通道
+                        oos.close();
+                        ois.close();
+                    } catch (IOException | ClassNotFoundException e) {
+                        logger.info("客户端连接错误...");
+                        throw new RuntimeException(e);
+                    } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
+                        throw new RuntimeException(e);
+                    }
+                }).start();
+            }
+        } catch (IOException e) {
+            logger.info("服务器启动失败...");
+            throw new RuntimeException(e);
+        }
+    }
+}
+```
+
+（6）客户端 `RPCClient` 构造请求
+
+```java
+public class RPCClient {
+    private static final Logger logger = LoggerFactory.getLogger(RPCClient.class);
+    public static void main(String[] args) throws IOException, ClassNotFoundException, NoSuchMethodException {
+        // 连接服务器
+        Socket socket = new Socket(InetAddress.getLocalHost(), 8888);
+        logger.info("客户端已经启动...");
+        if (socket.isConnected()) {
+            // 得到 IO 流
+            ObjectOutputStream objectOutputStream = new ObjectOutputStream(socket.getOutputStream());
+            ObjectInputStream objectInputStream = new ObjectInputStream(socket.getInputStream());
+
+            **// 构造请求
+            RPCRequest request = RPCRequest.builder()
+                    .interfaceName(UserService.class.getName())
+                    .methodName(UserService.class.getDeclaredMethod("updateUserName", String.class, String.class).getName())
+                    .args(new Object[]{"1", "v2 rpc"})
+                    .argsTypes(new Class[]{String.class, String.class})
+                    .build();
+            // 传入请求
+            objectOutputStream.writeObject(request);
+            objectOutputStream.flush();
+            // 得到数据
+            RPCResponse response = (RPCResponse) objectInputStream.readObject();
+            logger.info("客户端收到：{}", response);**
+
+            // 关闭 IO 流
+            objectInputStream.close();
+            objectOutputStream.close();
+        }
+        // 关闭连接
+        socket.close();
+    }
+}
+```
 
 结果：
 
@@ -392,98 +392,98 @@ RPC的工作方式通常涉及两个主要角色：客户端和服务器。客�
 
 过程：
 
-- （1）新增 `RPCClientTransport`，处理客户端底层通信细节
+（1）新增 `RPCClientTransport`，处理客户端底层通信细节
 
-  ```java
-  public class RPCClientTransport {
-      private static final Logger logger = LoggerFactory.getLogger(RPCClientTransport.class);
-      // 向指定的主机、端口号，发送请求
-      public static RPCResponse sendRPCRequest(String host, int post, RPCRequest request) {
-          try {
-              // 连接服务器
-              Socket socket = new Socket(host, post);
-              logger.info("客户端已经启动...");
-              if (socket.isConnected()) {
-                  // 得到 IO 流
-                  ObjectOutputStream objectOutputStream = new ObjectOutputStream(socket.getOutputStream());
-                  ObjectInputStream objectInputStream = new ObjectInputStream(socket.getInputStream());
-  
-                  // 传入请求
-                  objectOutputStream.writeObject(request);
-                  objectOutputStream.flush();
-                  // 得到数据
-                  RPCResponse response = (RPCResponse) objectInputStream.readObject();
-                  logger.info("客户端收到：{}", response);
-  
-                  // 关闭 IO 流
-                  objectInputStream.close();
-                  objectOutputStream.close();
-  
-                  // 返回请求
-                  return response;
-              }
-              // 关闭连接
-              socket.close();
-          } catch (IOException | ClassNotFoundException e) {
-              throw new RuntimeException(e);
-          }
-          return null;
-      }
-  }
-  ```
+```java
+public class RPCClientTransport {
+    private static final Logger logger = LoggerFactory.getLogger(RPCClientTransport.class);
+    // 向指定的主机、端口号，发送请求
+    public static RPCResponse sendRPCRequest(String host, int post, RPCRequest request) {
+        try {
+            // 连接服务器
+            Socket socket = new Socket(host, post);
+            logger.info("客户端已经启动...");
+            if (socket.isConnected()) {
+                // 得到 IO 流
+                ObjectOutputStream objectOutputStream = new ObjectOutputStream(socket.getOutputStream());
+                ObjectInputStream objectInputStream = new ObjectInputStream(socket.getInputStream());
 
-- （2）新增 `RPCClientProxy` ，代理客户端请求
+                // 传入请求
+                objectOutputStream.writeObject(request);
+                objectOutputStream.flush();
+                // 得到数据
+                RPCResponse response = (RPCResponse) objectInputStream.readObject();
+                logger.info("客户端收到：{}", response);
 
-  ```java
-  @AllArgsConstructor
-  public class RPCClientProxy implements InvocationHandler {
-      private String host;
-      private int port;
-  
-      @Override
-      public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-          // 构建请求
-          RPCRequest request = RPCRequest.builder()
-                  .interfaceName(method.getDeclaringClass().getName())
-                  .methodName(method.getName())
-                  .args(args)
-                  .argsTypes(method.getParameterTypes())
-                  .build();
-          // 发送请求
-          RPCResponse response = RPCClientTransport.sendRPCRequest(host, port, request);
-          // 返回数据
-          return response.getData();
-      }
-  
-  		public <T>T getServiceProxy(Class<T> clazz) {
-          return (T) Proxy.newProxyInstance(
-                  clazz.getClassLoader(), 
-                  new Class[]{clazz}, 
-                  this);
-      }
-  }
-  ```
+                // 关闭 IO 流
+                objectInputStream.close();
+                objectOutputStream.close();
 
-- （3）修改 `RPCClient`，实现代理类的代理
+                // 返回请求
+                return response;
+            }
+            // 关闭连接
+            socket.close();
+        } catch (IOException | ClassNotFoundException e) {
+            throw new RuntimeException(e);
+        }
+        return null;
+    }
+}
+```
 
-  ```java
-  public class RPCClient {
-      private static final Logger logger = LoggerFactory.getLogger(RPCClient.class);
-      public static void main(String[] args) {
-          // 生成客户端代理类
-          RPCClientProxy rpcClientProxy = new RPCClientProxy("127.0.0.1",8888);
-          // 代理具体服务
-          UserService userService = rpcClientProxy.getServiceProxy(UserService.class);
-  
-          // 执行服务方法
-          User user1 = userService.getUserById("1");
-          logger.info("user1: {}", user1);
-  
-          User user2 = userService.updateUserName("1", "v3 rpc");
-          logger.info("user2: {}", user2);
-      }
-  }
-  ```
+（2）新增 `RPCClientProxy` ，代理客户端请求
+
+```java
+@AllArgsConstructor
+public class RPCClientProxy implements InvocationHandler {
+    private String host;
+    private int port;
+
+    @Override
+    public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+        // 构建请求
+        RPCRequest request = RPCRequest.builder()
+                .interfaceName(method.getDeclaringClass().getName())
+                .methodName(method.getName())
+                .args(args)
+                .argsTypes(method.getParameterTypes())
+                .build();
+        // 发送请求
+        RPCResponse response = RPCClientTransport.sendRPCRequest(host, port, request);
+        // 返回数据
+        return response.getData();
+    }
+
+		public <T>T getServiceProxy(Class<T> clazz) {
+        return (T) Proxy.newProxyInstance(
+                clazz.getClassLoader(), 
+                new Class[]{clazz}, 
+                this);
+    }
+}
+```
+
+（3）修改 `RPCClient`，实现代理类的代理
+
+```java
+public class RPCClient {
+    private static final Logger logger = LoggerFactory.getLogger(RPCClient.class);
+    public static void main(String[] args) {
+        // 生成客户端代理类
+        RPCClientProxy rpcClientProxy = new RPCClientProxy("127.0.0.1",8888);
+        // 代理具体服务
+        UserService userService = rpcClientProxy.getServiceProxy(UserService.class);
+
+        // 执行服务方法
+        User user1 = userService.getUserById("1");
+        logger.info("user1: {}", user1);
+
+        User user2 = userService.updateUserName("1", "v3 rpc");
+        logger.info("user2: {}", user2);
+    }
+}
+```
 
 效果：
 
@@ -501,160 +501,160 @@ RPC的工作方式通常涉及两个主要角色：客户端和服务器。客�
 
 过程：
 
-- （1）新增一个服务 `BookService`
+（1）新增一个服务 `BookService`
 
-  ```java
-  @Data
-  @Builder
-  @NoArgsConstructor
-  @AllArgsConstructor
-  public class Book implements Serializable {
-      private String id;
-      private String name;
-      private double price;
-      private boolean isBorrow;
-  }
-  
-  public interface BookService {
-      Book getBook(String id);
-      boolean deleteBook(String id);
-  }
-  
-  public class BookServiceImpl implements BookService {
-  
-      @Override
-      public Book getBook(String id) {
-          return Book.builder().id(id).name("java开发").price(39.9).build();
-      }
-  
-      @Override
-      public boolean deleteBook(String id) {
-          return true;
-      }
-  }
-  ```
+```java
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+public class Book implements Serializable {
+    private String id;
+    private String name;
+    private double price;
+    private boolean isBorrow;
+}
 
-- （2）新增一个服务提供者 `ServiceProvider` 和一个默认实现类 `DefaultServiceProvider`
+public interface BookService {
+    Book getBook(String id);
+    boolean deleteBook(String id);
+}
 
-  ```java
-  public interface ServiceProvider {
-  
-      void addService(String serviceName, Object service);
-  
-      Object getService(String serviceName);
-  
-      void delService(String serviceName);
-  }
-  
-  public class DefaultServiceProvider implements ServiceProvider {
-      private Map<String, Object> services;
-  
-      public DefaultServiceProvider() {
-          this.services = new HashMap<>();
-      }
-  
-      @Override
-      public void addService(String serviceName, Object service) {
-          services.put(serviceName, service);
-      }
-  
-      @Override
-      public Object getService(String serviceName) {
-          return services.get(serviceName);
-      }
-  
-      @Override
-      public void delService(String serviceName) {
-          services.remove(serviceName);
-      }
-  }
-  ```
+public class BookServiceImpl implements BookService {
 
-- （3）更新 `RPCServer`
+    @Override
+    public Book getBook(String id) {
+        return Book.builder().id(id).name("java开发").price(39.9).build();
+    }
 
-  ```java
-  public class RPCServer {
-      private static final Logger logger = LoggerFactory.getLogger(RPCServer.class);
-      public static void main(String[] args) throws IOException {
-          **// 注册服务
-          UserService userService = new UserServiceImpl();
-          BookService bookService = new BookServiceImpl();
-          // 存储服务
-          ServiceProvider serviceProvider = new DefaultServiceProvider();
-          serviceProvider.addService(userService.getClass().getName(), userService);
-          serviceProvider.addService(userService.getClass().getName(), bookService);**
-  
-          ServerSocket serverSocket = new ServerSocket(8888);
-          try {
-              logger.info("服务器启动成功...");
-              // BIO 方式等待客户端连接
-              while (true) {
-                  // 进入阻塞，等待连接
-                  Socket socket = serverSocket.accept();
-                  logger.info("服务器连接成功：{}", socket);
-                  // 开启线程去处理
-                  new Thread(() -> {
-                      try {
-                          // 得到 IO 流
-                          ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream());
-                          ObjectInputStream ois = new ObjectInputStream(socket.getInputStream());
-                          // 请求对象
-                          RPCRequest request = (RPCRequest) ois.readObject();
-  
-                          **// 得到服务名
-                          String serviceName = request.getInterfaceName();
-                          // 得到服务实现类
-                          Object service = serviceProvider.getService(serviceName);
-                          // 得到服务方法并调用
-                          Method method = service.getClass().getMethod(request.getMethodName(), request.getArgsTypes());
-                          Object obj = method.invoke(service, request.getArgs());**
-  
-                          // 封装结果
-                          RPCResponse response = RPCResponse.ok(obj);
-                          // 响应结果
-                          oos.writeObject(response);
-                          oos.flush();
-                          logger.info("服务器发送：{}", response);
-                          // 关闭通道
-                          oos.close();
-                          ois.close();
-                      } catch (IOException | ClassNotFoundException e) {
-                          logger.info("客户端连接错误...");
-                          throw new RuntimeException(e);
-                      } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
-                          throw new RuntimeException(e);
-                      }
-                  }).start();
-              }
-          } catch (IOException e) {
-              logger.info("服务器启动失败...");
-              throw new RuntimeException(e);
-          }
-      }
-  }
-  ```
+    @Override
+    public boolean deleteBook(String id) {
+        return true;
+    }
+}
+```
 
-- （4）更新 `RPCClient`
+（2）新增一个服务提供者 `ServiceProvider` 和一个默认实现类 `DefaultServiceProvider`
 
-  ```java
-  public class RPCClient {
-      private static final Logger logger = LoggerFactory.getLogger(RPCClient.class);
-      public static void main(String[] args) {
-          // 生成客户端代理类
-          RPCClientProxy rpcClientProxy = new RPCClientProxy("127.0.0.1",8888);
-  
-          // 代理 user 服务
-          UserService userService = rpcClientProxy.getProxyService(UserService.class);
-          User user = userService.getUser("1");
-          logger.info("user: {}", user);
-  
-          // 代理 book 服务
-          BookService bookService = rpcClientProxy.getProxyService(BookService.class);
-          Book book = bookService.getBook("1");
-          logger.info("book: {}", book);
-      }
-  }
-  ```
+```java
+public interface ServiceProvider {
+
+    void addService(String serviceName, Object service);
+
+    Object getService(String serviceName);
+
+    void delService(String serviceName);
+}
+
+public class DefaultServiceProvider implements ServiceProvider {
+    private Map<String, Object> services;
+
+    public DefaultServiceProvider() {
+        this.services = new HashMap<>();
+    }
+
+    @Override
+    public void addService(String serviceName, Object service) {
+        services.put(serviceName, service);
+    }
+
+    @Override
+    public Object getService(String serviceName) {
+        return services.get(serviceName);
+    }
+
+    @Override
+    public void delService(String serviceName) {
+        services.remove(serviceName);
+    }
+}
+```
+
+（3）更新 `RPCServer`
+
+```java
+public class RPCServer {
+    private static final Logger logger = LoggerFactory.getLogger(RPCServer.class);
+    public static void main(String[] args) throws IOException {
+        **// 注册服务
+        UserService userService = new UserServiceImpl();
+        BookService bookService = new BookServiceImpl();
+        // 存储服务
+        ServiceProvider serviceProvider = new DefaultServiceProvider();
+        serviceProvider.addService(userService.getClass().getName(), userService);
+        serviceProvider.addService(userService.getClass().getName(), bookService);**
+
+        ServerSocket serverSocket = new ServerSocket(8888);
+        try {
+            logger.info("服务器启动成功...");
+            // BIO 方式等待客户端连接
+            while (true) {
+                // 进入阻塞，等待连接
+                Socket socket = serverSocket.accept();
+                logger.info("服务器连接成功：{}", socket);
+                // 开启线程去处理
+                new Thread(() -> {
+                    try {
+                        // 得到 IO 流
+                        ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream());
+                        ObjectInputStream ois = new ObjectInputStream(socket.getInputStream());
+                        // 请求对象
+                        RPCRequest request = (RPCRequest) ois.readObject();
+
+                        **// 得到服务名
+                        String serviceName = request.getInterfaceName();
+                        // 得到服务实现类
+                        Object service = serviceProvider.getService(serviceName);
+                        // 得到服务方法并调用
+                        Method method = service.getClass().getMethod(request.getMethodName(), request.getArgsTypes());
+                        Object obj = method.invoke(service, request.getArgs());**
+
+                        // 封装结果
+                        RPCResponse response = RPCResponse.ok(obj);
+                        // 响应结果
+                        oos.writeObject(response);
+                        oos.flush();
+                        logger.info("服务器发送：{}", response);
+                        // 关闭通道
+                        oos.close();
+                        ois.close();
+                    } catch (IOException | ClassNotFoundException e) {
+                        logger.info("客户端连接错误...");
+                        throw new RuntimeException(e);
+                    } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
+                        throw new RuntimeException(e);
+                    }
+                }).start();
+            }
+        } catch (IOException e) {
+            logger.info("服务器启动失败...");
+            throw new RuntimeException(e);
+        }
+    }
+}
+```
+
+（4）更新 `RPCClient`
+
+```java
+public class RPCClient {
+    private static final Logger logger = LoggerFactory.getLogger(RPCClient.class);
+    public static void main(String[] args) {
+        // 生成客户端代理类
+        RPCClientProxy rpcClientProxy = new RPCClientProxy("127.0.0.1",8888);
+
+        // 代理 user 服务
+        UserService userService = rpcClientProxy.getProxyService(UserService.class);
+        User user = userService.getUser("1");
+        logger.info("user: {}", user);
+
+        // 代理 book 服务
+        BookService bookService = rpcClientProxy.getProxyService(BookService.class);
+        Book book = bookService.getBook("1");
+        logger.info("book: {}", book);
+    }
+}
+```
 
 效果：
 
@@ -673,163 +673,163 @@ RPC的工作方式通常涉及两个主要角色：客户端和服务器。客�
 
 实现：
 
-- （1）重构 `RPCServer` 作为抽象类 `AbstractRPCServer` 存在
+（1）重构 `RPCServer` 作为抽象类 `AbstractRPCServer` 存在
 
-  ```java
-  @AllArgsConstructor
-  @Data
-  public abstract class AbstractRPCServer {
-      private int port;
-  
-      private ServiceProvider serviceProvider;
-      public abstract void startServer();
-      public abstract void stopServer();
-  }
-  ```
+```java
+@AllArgsConstructor
+@Data
+public abstract class AbstractRPCServer {
+    private int port;
 
-- （2）新增 `SingleThreadBIORPCServer`，实现单线程下的 BIO 服务提供
+    private ServiceProvider serviceProvider;
+    public abstract void startServer();
+    public abstract void stopServer();
+}
+```
 
-  ```java
-  public class SingleThreadBIOServer extends AbstractRPCServer {
-      // 服务提供商
-  
-      private static final Logger logger = LoggerFactory.getLogger(SingleThreadBIOServer.class);
-  
-      public SingleThreadBIOServer(int port, ServiceProvider serviceProvider) {
-          super(port, serviceProvider);
-      }
-  
-      @Override
-      public void startServer() {
-          try {
-              ServerSocket serverSocket = new ServerSocket(getPort());
-              logger.info("服务器启动成功...");
-              // BIO 方式等待客户端连接
-              while (true) {
-                  // 进入阻塞，等待连接
-                  Socket socket = serverSocket.accept();
-                  logger.info("服务器连接成功：{}", socket);
-                  // 开启线程去处理
-                  new Thread(new BIOThreadHandler(socket, getServiceProvider())).start();
-              }
-          } catch (IOException e) {
-              logger.info("服务器启动失败...");
-              throw new RuntimeException(e);
-          }
-      }
-  
-      @Override
-      public void stopServer() {
-  
-      }
-  }
-  ```
+（2）新增 `SingleThreadBIORPCServer`，实现单线程下的 BIO 服务提供
 
-- （3）新增 `ThreadPoolBIORPCServer`，实现多线程下的 BIO 服务提供
+```java
+public class SingleThreadBIOServer extends AbstractRPCServer {
+    // 服务提供商
 
-  ```java
-  public class ThreadPoolBIOServer extends AbstractRPCServer {
-      // 服务提供商
-      private final ThreadPoolExecutor threadPool;
-      private static final Logger logger = LoggerFactory.getLogger(ThreadPoolBIOServer.class);
-  
-      public ThreadPoolBIOServer(int port, ServiceProvider serviceProvider) {
-          super(port, serviceProvider);
-          this.threadPool = new ThreadPoolExecutor(Runtime.getRuntime().availableProcessors(),
-                  1000, 60, TimeUnit.SECONDS, new ArrayBlockingQueue<>(100));
-      }
-      public ThreadPoolBIOServer(int port, ServiceProvider serviceProvider, ThreadPoolExecutor threadPool) {
-          super(port, serviceProvider);
-          this.threadPool = threadPool;
-      }
-  
-      @Override
-      public void startServer() {
-          try {
-              ServerSocket serverSocket = new ServerSocket(getPort());
-              logger.info("服务器启动成功...");
-              // BIO 方式等待客户端连接
-              while (true) {
-                  // 进入阻塞，等待连接
-                  Socket socket = serverSocket.accept();
-                  logger.info("服务器连接成功：{}", socket);
-                  // 开启线程去处理
-                  threadPool.execute(new BIOThreadHandler(socket, getServiceProvider()));
-              }
-          } catch (IOException e) {
-              logger.info("服务器启动失败...");
-              throw new RuntimeException(e);
-          }
-      }
-  
-      @Override
-      public void stopServer() {
-  
-      }
-  }
-  ```
+    private static final Logger logger = LoggerFactory.getLogger(SingleThreadBIOServer.class);
 
-- （4）新增 `BIOThreadHandler`，处理线程操作
+    public SingleThreadBIOServer(int port, ServiceProvider serviceProvider) {
+        super(port, serviceProvider);
+    }
 
-  ```java
-  @AllArgsConstructor
-  public class BIOThreadHandler implements Runnable {
-  
-      private static final Logger logger = LoggerFactory.getLogger(BIOThreadHandler.class);
-  
-      private Socket socket;
-      private ServiceProvider serviceProvider;
-      @Override
-      public void run() {
-          try {
-              // 得到 IO 流
-              ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream());
-              ObjectInputStream ois = new ObjectInputStream(socket.getInputStream());
-              // 请求对象
-              RPCRequest request = (RPCRequest) ois.readObject();
-              // 得到服务名
-              String serviceName = request.getInterfaceName();
-              logger.info("服务名: {}", serviceName);
-              // 得到服务实现类
-              Object service = serviceProvider.getService(serviceName);
-              // 得到服务方法并调用
-              Method method = service.getClass().getMethod(request.getMethodName(), request.getArgsTypes());
-              Object obj = method.invoke(service, request.getArgs());
-              // 封装结果
-              RPCResponse response = RPCResponse.ok(obj);
-              // 响应结果
-              oos.writeObject(response);
-              oos.flush();
-              logger.info("服务器发送：{}", response);
-              // 关闭通道
-              oos.close();
-              ois.close();
-          } catch (IOException | ClassNotFoundException | NoSuchMethodException | IllegalAccessException |
-                   InvocationTargetException e) {
-              throw new RuntimeException(e);
-          }
-      }
-  }
-  ```
+    @Override
+    public void startServer() {
+        try {
+            ServerSocket serverSocket = new ServerSocket(getPort());
+            logger.info("服务器启动成功...");
+            // BIO 方式等待客户端连接
+            while (true) {
+                // 进入阻塞，等待连接
+                Socket socket = serverSocket.accept();
+                logger.info("服务器连接成功：{}", socket);
+                // 开启线程去处理
+                new Thread(new BIOThreadHandler(socket, getServiceProvider())).start();
+            }
+        } catch (IOException e) {
+            logger.info("服务器启动失败...");
+            throw new RuntimeException(e);
+        }
+    }
 
-- （5）新增 `Server` 作为测试服务端
+    @Override
+    public void stopServer() {
 
-  ```java
-  public class Server {
-      public static void main(String[] args) {
-          // 注册服务
-          UserService userService = new UserServiceImpl();
-          BookService bookService = new BookServiceImpl();
-          // 存储服务
-          ServiceProvider serviceProvider = new DefaultServiceProvider();
-          serviceProvider.addService(userService.getClass().getInterfaces()[0].getName(), userService);
-          serviceProvider.addService(bookService.getClass().getInterfaces()[0].getName(), bookService);
-          // 测试服务
-          AbstractRPCServer abstractRpcServer = new SingleThreadBIOServer(8888, serviceProvider);
-          abstractRpcServer.startServer();
-      }
-  }
-  ```
+    }
+}
+```
+
+（3）新增 `ThreadPoolBIORPCServer`，实现多线程下的 BIO 服务提供
+
+```java
+public class ThreadPoolBIOServer extends AbstractRPCServer {
+    // 服务提供商
+    private final ThreadPoolExecutor threadPool;
+    private static final Logger logger = LoggerFactory.getLogger(ThreadPoolBIOServer.class);
+
+    public ThreadPoolBIOServer(int port, ServiceProvider serviceProvider) {
+        super(port, serviceProvider);
+        this.threadPool = new ThreadPoolExecutor(Runtime.getRuntime().availableProcessors(),
+                1000, 60, TimeUnit.SECONDS, new ArrayBlockingQueue<>(100));
+    }
+    public ThreadPoolBIOServer(int port, ServiceProvider serviceProvider, ThreadPoolExecutor threadPool) {
+        super(port, serviceProvider);
+        this.threadPool = threadPool;
+    }
+
+    @Override
+    public void startServer() {
+        try {
+            ServerSocket serverSocket = new ServerSocket(getPort());
+            logger.info("服务器启动成功...");
+            // BIO 方式等待客户端连接
+            while (true) {
+                // 进入阻塞，等待连接
+                Socket socket = serverSocket.accept();
+                logger.info("服务器连接成功：{}", socket);
+                // 开启线程去处理
+                threadPool.execute(new BIOThreadHandler(socket, getServiceProvider()));
+            }
+        } catch (IOException e) {
+            logger.info("服务器启动失败...");
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Override
+    public void stopServer() {
+
+    }
+}
+```
+
+（4）新增 `BIOThreadHandler`，处理线程操作
+
+```java
+@AllArgsConstructor
+public class BIOThreadHandler implements Runnable {
+
+    private static final Logger logger = LoggerFactory.getLogger(BIOThreadHandler.class);
+
+    private Socket socket;
+    private ServiceProvider serviceProvider;
+    @Override
+    public void run() {
+        try {
+            // 得到 IO 流
+            ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream());
+            ObjectInputStream ois = new ObjectInputStream(socket.getInputStream());
+            // 请求对象
+            RPCRequest request = (RPCRequest) ois.readObject();
+            // 得到服务名
+            String serviceName = request.getInterfaceName();
+            logger.info("服务名: {}", serviceName);
+            // 得到服务实现类
+            Object service = serviceProvider.getService(serviceName);
+            // 得到服务方法并调用
+            Method method = service.getClass().getMethod(request.getMethodName(), request.getArgsTypes());
+            Object obj = method.invoke(service, request.getArgs());
+            // 封装结果
+            RPCResponse response = RPCResponse.ok(obj);
+            // 响应结果
+            oos.writeObject(response);
+            oos.flush();
+            logger.info("服务器发送：{}", response);
+            // 关闭通道
+            oos.close();
+            ois.close();
+        } catch (IOException | ClassNotFoundException | NoSuchMethodException | IllegalAccessException |
+                 InvocationTargetException e) {
+            throw new RuntimeException(e);
+        }
+    }
+}
+```
+
+（5）新增 `Server` 作为测试服务端
+
+```java
+public class Server {
+    public static void main(String[] args) {
+        // 注册服务
+        UserService userService = new UserServiceImpl();
+        BookService bookService = new BookServiceImpl();
+        // 存储服务
+        ServiceProvider serviceProvider = new DefaultServiceProvider();
+        serviceProvider.addService(userService.getClass().getInterfaces()[0].getName(), userService);
+        serviceProvider.addService(bookService.getClass().getInterfaces()[0].getName(), bookService);
+        // 测试服务
+        AbstractRPCServer abstractRpcServer = new SingleThreadBIOServer(8888, serviceProvider);
+        abstractRpcServer.startServer();
+    }
+}
+```
 
 结果：
 
@@ -847,116 +847,116 @@ RPC的工作方式通常涉及两个主要角色：客户端和服务器。客�
 
 实现：
 
-- （1）重构 `RPCClient`，使其为抽象类 `AbstarctRPCClient`，不同的子类实现不同的发送请求方式
+（1）重构 `RPCClient`，使其为抽象类 `AbstarctRPCClient`，不同的子类实现不同的发送请求方式
 
-  ```java
-  @AllArgsConstructor
-  @Data
-  public abstract class AbstractRPCClient {
-      private String host;
-      private int port;
-      public abstract RPCResponse sendRPCRequest(RPCRequest request);
-  }
-  ```
+```java
+@AllArgsConstructor
+@Data
+public abstract class AbstractRPCClient {
+    private String host;
+    private int port;
+    public abstract RPCResponse sendRPCRequest(RPCRequest request);
+}
+```
 
-- （2）提供默认的客户端方式 `DefaultRPCClient`（把 `RPCClientTransport` 代码搬过来）
+（2）提供默认的客户端方式 `DefaultRPCClient`（把 `RPCClientTransport` 代码搬过来）
 
-  ```java
-  public class DefaultRPCClient extends AbstractRPCClient {
-      private static final Logger logger = LoggerFactory.getLogger(DefaultRPCClient.class);
-  
-      public DefaultRPCClient(String host, int port) {
-          super(host, port);
-      }
-  
-      @Override
-      public RPCResponse sendRPCRequest(RPCRequest request) {
-          try {
-              // 连接服务器
-              Socket socket = new Socket(getHost(), getPort());
-              logger.info("客户端已经启动...");
-              if (socket.isConnected()) {
-                  // 得到 IO 流
-                  ObjectOutputStream objectOutputStream = new ObjectOutputStream(socket.getOutputStream());
-                  ObjectInputStream objectInputStream = new ObjectInputStream(socket.getInputStream());
-  
-                  // 传入请求
-                  objectOutputStream.writeObject(request);
-                  objectOutputStream.flush();
-                  // 得到数据
-                  RPCResponse response = (RPCResponse) objectInputStream.readObject();
-                  logger.info("客户端收到：{}", response);
-  
-                  // 关闭 IO 流
-                  objectInputStream.close();
-                  objectOutputStream.close();
-  
-                  // 返回请求
-                  return response;
-              }
-              // 关闭连接
-              socket.close();
-          } catch (IOException | ClassNotFoundException e) {
-              throw new RuntimeException(e);
-          }
-          return null;
-      }
-  }
-  ```
+```java
+public class DefaultRPCClient extends AbstractRPCClient {
+    private static final Logger logger = LoggerFactory.getLogger(DefaultRPCClient.class);
 
-- （3）重构代理类 `RPCClientProxy`
+    public DefaultRPCClient(String host, int port) {
+        super(host, port);
+    }
 
-  ```java
-  @AllArgsConstructor
-  public class RPCClientProxy implements InvocationHandler {
-      private AbstractRPCClient abstractRpcClient;
-      @Override
-      public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-          // 构建请求
-          RPCRequest request = RPCRequest.builder()
-                  .interfaceName(method.getDeclaringClass().getName())
-                  .methodName(method.getName())
-                  .args(args)
-                  .argsTypes(method.getParameterTypes())
-                  .build();
-          // 发送请求
-          RPCResponse response = abstractRpcClient.sendRPCRequest(request);
-          // 返回数据
-          return response.getData();
-      }
-  
-      public <T>T getProxyService(Class<T> clazz) {
-          return (T) Proxy.newProxyInstance(
-                  clazz.getClassLoader(),
-                  new Class[]{clazz},
-                  this);
-      }
-  }
-  ```
+    @Override
+    public RPCResponse sendRPCRequest(RPCRequest request) {
+        try {
+            // 连接服务器
+            Socket socket = new Socket(getHost(), getPort());
+            logger.info("客户端已经启动...");
+            if (socket.isConnected()) {
+                // 得到 IO 流
+                ObjectOutputStream objectOutputStream = new ObjectOutputStream(socket.getOutputStream());
+                ObjectInputStream objectInputStream = new ObjectInputStream(socket.getInputStream());
 
-- （4）新增客户端测试类
+                // 传入请求
+                objectOutputStream.writeObject(request);
+                objectOutputStream.flush();
+                // 得到数据
+                RPCResponse response = (RPCResponse) objectInputStream.readObject();
+                logger.info("客户端收到：{}", response);
 
-  ```java
-  public class Client {
-      private static final Logger logger = LoggerFactory.getLogger(Client.class);
-  
-      public static void main(String[] args) {
-          AbstractRPCClient abstractRpcClient = new DefaultRPCClient("127.0.0.1",8888);
-          // 生成客户端代理类
-          RPCClientProxy rpcClientProxy = new RPCClientProxy(abstractRpcClient);
-  
-          // 代理 user 服务
-          UserService userService = rpcClientProxy.getProxyService(UserService.class);
-          User user = userService.getUser("1");
-          logger.info("user: {}", user);
-  
-          // 代理 book 服务
-          BookService bookService = rpcClientProxy.getProxyService(BookService.class);
-          Book book = bookService.getBook("1");
-          logger.info("book: {}", book);
-      }
-  }
-  ```
+                // 关闭 IO 流
+                objectInputStream.close();
+                objectOutputStream.close();
+
+                // 返回请求
+                return response;
+            }
+            // 关闭连接
+            socket.close();
+        } catch (IOException | ClassNotFoundException e) {
+            throw new RuntimeException(e);
+        }
+        return null;
+    }
+}
+```
+
+（3）重构代理类 `RPCClientProxy`
+
+```java
+@AllArgsConstructor
+public class RPCClientProxy implements InvocationHandler {
+    private AbstractRPCClient abstractRpcClient;
+    @Override
+    public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+        // 构建请求
+        RPCRequest request = RPCRequest.builder()
+                .interfaceName(method.getDeclaringClass().getName())
+                .methodName(method.getName())
+                .args(args)
+                .argsTypes(method.getParameterTypes())
+                .build();
+        // 发送请求
+        RPCResponse response = abstractRpcClient.sendRPCRequest(request);
+        // 返回数据
+        return response.getData();
+    }
+
+    public <T>T getProxyService(Class<T> clazz) {
+        return (T) Proxy.newProxyInstance(
+                clazz.getClassLoader(),
+                new Class[]{clazz},
+                this);
+    }
+}
+```
+
+（4）新增客户端测试类
+
+```java
+public class Client {
+    private static final Logger logger = LoggerFactory.getLogger(Client.class);
+
+    public static void main(String[] args) {
+        AbstractRPCClient abstractRpcClient = new DefaultRPCClient("127.0.0.1",8888);
+        // 生成客户端代理类
+        RPCClientProxy rpcClientProxy = new RPCClientProxy(abstractRpcClient);
+
+        // 代理 user 服务
+        UserService userService = rpcClientProxy.getProxyService(UserService.class);
+        User user = userService.getUser("1");
+        logger.info("user: {}", user);
+
+        // 代理 book 服务
+        BookService bookService = rpcClientProxy.getProxyService(BookService.class);
+        Book book = bookService.getBook("1");
+        logger.info("book: {}", book);
+    }
+}
+```
 
 效果：
 
@@ -991,148 +991,148 @@ RPC的工作方式通常涉及两个主要角色：客户端和服务器。客�
 
 过程：
 
-- （1）新增 `NettyRPCServer`
+（1）新增 `NettyRPCServer`
 
-  ```java
-  public class NettyRPCServer extends AbstractRPCServer {
-  
-      private static final Logger logger = LoggerFactory.getLogger(NettyRPCServer.class);
-  
-      public NettyRPCServer(int port, ServiceProvider serviceProvider) {
-          super(port, serviceProvider);
-      }
-  
-      @Override
-      public void startServer() {
-          new ServerBootstrap()
-                  .group(new NioEventLoopGroup())
-                  .channel(NioServerSocketChannel.class)
-                  .childHandler(new ChannelInitializer<NioSocketChannel>() {
-                      @Override
-                      protected void initChannel(NioSocketChannel nioSocketChannel) throws Exception {
-                          // jdk 解码器
-                          nioSocketChannel.pipeline().addLast(new ObjectDecoder(Class::forName));
-                          // 管道数据处理器（rpcRequest）
-                          nioSocketChannel.pipeline().addLast(new NettyRPCServerHandler(getServiceProvider()));
-                          // jdk 编码器
-                          nioSocketChannel.pipeline().addLast(new ObjectEncoder());
-                      }
-                  })
-                  .bind(getPort());
-          logger.info("Netty 服务端等待连接...");
-      }
-  
-      @Override
-      public void stopServer() {
-  
-      }
-  }
-  ```
+```java
+public class NettyRPCServer extends AbstractRPCServer {
 
-- （2）新增 `NettyRPCServerHandler` 入站处理器，处理接收到的请求 `RPCRequest`
+    private static final Logger logger = LoggerFactory.getLogger(NettyRPCServer.class);
 
-  ```java
-  @AllArgsConstructor
-  public class NettyRPCServerHandler extends SimpleChannelInboundHandler<RPCRequest> {
-  
-      private ServiceProvider serviceProvider;
-      private static final Logger logger = LoggerFactory.getLogger(NettyRPCServerHandler.class);
-  
-      @Override
-      protected void channelRead0(ChannelHandlerContext channelHandlerContext, RPCRequest rpcRequest) throws Exception {
-          try {
-              logger.info("Netty 服务端接收: 【{}】", rpcRequest);
-              // 得到服务名
-              String serviceName = rpcRequest.getInterfaceName();
-              // 得到服务实现类
-              Object service = serviceProvider.getService(serviceName);
-              // 反射调用方法
-              Method method = service.getClass().getMethod(rpcRequest.getMethodName(), rpcRequest.getArgsTypes());
-              Object obj = method.invoke(service, rpcRequest.getArgs());
-              // 封装结果
-              RPCResponse response = RPCResponse.ok(obj);
-              // 写入管道
-              Channel channel = channelHandlerContext.channel();
-              channel.writeAndFlush(response);
-              logger.info("Netty 服务端发送：【{}】", response);
-          } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
-              e.printStackTrace();
-          }
-      }
-  }
-  ```
+    public NettyRPCServer(int port, ServiceProvider serviceProvider) {
+        super(port, serviceProvider);
+    }
 
-- （3）新增 `NettyRPCClient`
+    @Override
+    public void startServer() {
+        new ServerBootstrap()
+                .group(new NioEventLoopGroup())
+                .channel(NioServerSocketChannel.class)
+                .childHandler(new ChannelInitializer<NioSocketChannel>() {
+                    @Override
+                    protected void initChannel(NioSocketChannel nioSocketChannel) throws Exception {
+                        // jdk 解码器
+                        nioSocketChannel.pipeline().addLast(new ObjectDecoder(Class::forName));
+                        // 管道数据处理器（rpcRequest）
+                        nioSocketChannel.pipeline().addLast(new NettyRPCServerHandler(getServiceProvider()));
+                        // jdk 编码器
+                        nioSocketChannel.pipeline().addLast(new ObjectEncoder());
+                    }
+                })
+                .bind(getPort());
+        logger.info("Netty 服务端等待连接...");
+    }
 
-  ```java
-  public class NettyRPCClient extends AbstractRPCClient {
-      private static final Logger logger = LoggerFactory.getLogger(NettyRPCClient.class);
-      public NettyRPCClient(String host, int port) {
-          super(host, port);
-      }
-  
-      @Override
-      public RPCResponse sendRPCRequest(RPCRequest request) {
-          CompletableFuture<RPCResponse> completableFuture = new CompletableFuture<>();
-          ChannelFuture channelFuture = new Bootstrap()
-                  .group(new NioEventLoopGroup())
-                  .channel(NioSocketChannel.class)
-                  .handler(new ChannelInitializer<NioSocketChannel>() {
-                      @Override
-                      protected void initChannel(NioSocketChannel nioSocketChannel) throws Exception {
-                          // 解码器
-                          nioSocketChannel.pipeline().addLast(new ObjectDecoder(Class::forName));
-                          // 入站处理器
-                          nioSocketChannel.pipeline().addLast(new NettyRPCClientHandler(completableFuture));
-                          // 编码器
-                          nioSocketChannel.pipeline().addLast(new ObjectEncoder());
-                      }
-                  })
-                  .connect(new InetSocketAddress(getHost(), getPort()));
-          try {
-              // 同步阻塞，直到连接建立完成发送结果
-              channelFuture.sync();
-              logger.info("Netty 客户端连接建立成功...");
-              Channel channel = channelFuture.channel();
-              channel.writeAndFlush(request);
-              logger.info("Netty 客户端发送：【{}】", request);
-              // 异步获取处理结果
-              return completableFuture.get();
-          } catch (InterruptedException | ExecutionException e) {
-              throw new RuntimeException(e);
-          }
-      }
-  }
-  ```
+    @Override
+    public void stopServer() {
 
-- （4）新增 `NettyRPCClientHandler` 入站处理器，处理接收到的响应 `RPCResponse`
+    }
+}
+```
 
-  ```java
-  @AllArgsConstructor
-  public class NettyRPCClientHandler extends SimpleChannelInboundHandler<RPCResponse> {
-      private CompletableFuture<RPCResponse> completableFuture;
-      private static final Logger logger = LoggerFactory.getLogger(NettyRPCClientHandler.class);
-      @Override
-      protected void channelRead0(ChannelHandlerContext channelHandlerContext, RPCResponse rpcResponse) {
-          logger.info("Netty 客户端接收: 【{}】", rpcResponse);
-          completableFuture.complete(rpcResponse);
-      }
-  }
-  ```
+（2）新增 `NettyRPCServerHandler` 入站处理器，处理接收到的请求 `RPCRequest`
 
-- （5）修改 `Client`、`Server`
+```java
+@AllArgsConstructor
+public class NettyRPCServerHandler extends SimpleChannelInboundHandler<RPCRequest> {
 
-  ```java
-  // Client
-  AbstractRPCClient abstractRpcClient = new DefaultRPCClient("127.0.0.1",8888); 
-  // 改成下面这句
-  AbstractRPCClient abstractRpcClient = new NettyRPCClient("127.0.0.1",8888);
-  
-  // Server
-  AbstractRPCServer abstractRpcServer = new SingleThreadBIOServer(8888, serviceProvider);
-  // 改成下面这句
-  AbstractRPCServer abstractRpcServer = new NettyRPCServer(8888, serviceProvider);
-  ```
+    private ServiceProvider serviceProvider;
+    private static final Logger logger = LoggerFactory.getLogger(NettyRPCServerHandler.class);
+
+    @Override
+    protected void channelRead0(ChannelHandlerContext channelHandlerContext, RPCRequest rpcRequest) throws Exception {
+        try {
+            logger.info("Netty 服务端接收: 【{}】", rpcRequest);
+            // 得到服务名
+            String serviceName = rpcRequest.getInterfaceName();
+            // 得到服务实现类
+            Object service = serviceProvider.getService(serviceName);
+            // 反射调用方法
+            Method method = service.getClass().getMethod(rpcRequest.getMethodName(), rpcRequest.getArgsTypes());
+            Object obj = method.invoke(service, rpcRequest.getArgs());
+            // 封装结果
+            RPCResponse response = RPCResponse.ok(obj);
+            // 写入管道
+            Channel channel = channelHandlerContext.channel();
+            channel.writeAndFlush(response);
+            logger.info("Netty 服务端发送：【{}】", response);
+        } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
+            e.printStackTrace();
+        }
+    }
+}
+```
+
+（3）新增 `NettyRPCClient`
+
+```java
+public class NettyRPCClient extends AbstractRPCClient {
+    private static final Logger logger = LoggerFactory.getLogger(NettyRPCClient.class);
+    public NettyRPCClient(String host, int port) {
+        super(host, port);
+    }
+
+    @Override
+    public RPCResponse sendRPCRequest(RPCRequest request) {
+        CompletableFuture<RPCResponse> completableFuture = new CompletableFuture<>();
+        ChannelFuture channelFuture = new Bootstrap()
+                .group(new NioEventLoopGroup())
+                .channel(NioSocketChannel.class)
+                .handler(new ChannelInitializer<NioSocketChannel>() {
+                    @Override
+                    protected void initChannel(NioSocketChannel nioSocketChannel) throws Exception {
+                        // 解码器
+                        nioSocketChannel.pipeline().addLast(new ObjectDecoder(Class::forName));
+                        // 入站处理器
+                        nioSocketChannel.pipeline().addLast(new NettyRPCClientHandler(completableFuture));
+                        // 编码器
+                        nioSocketChannel.pipeline().addLast(new ObjectEncoder());
+                    }
+                })
+                .connect(new InetSocketAddress(getHost(), getPort()));
+        try {
+            // 同步阻塞，直到连接建立完成发送结果
+            channelFuture.sync();
+            logger.info("Netty 客户端连接建立成功...");
+            Channel channel = channelFuture.channel();
+            channel.writeAndFlush(request);
+            logger.info("Netty 客户端发送：【{}】", request);
+            // 异步获取处理结果
+            return completableFuture.get();
+        } catch (InterruptedException | ExecutionException e) {
+            throw new RuntimeException(e);
+        }
+    }
+}
+```
+
+（4）新增 `NettyRPCClientHandler` 入站处理器，处理接收到的响应 `RPCResponse`
+
+```java
+@AllArgsConstructor
+public class NettyRPCClientHandler extends SimpleChannelInboundHandler<RPCResponse> {
+    private CompletableFuture<RPCResponse> completableFuture;
+    private static final Logger logger = LoggerFactory.getLogger(NettyRPCClientHandler.class);
+    @Override
+    protected void channelRead0(ChannelHandlerContext channelHandlerContext, RPCResponse rpcResponse) {
+        logger.info("Netty 客户端接收: 【{}】", rpcResponse);
+        completableFuture.complete(rpcResponse);
+    }
+}
+```
+
+（5）修改 `Client`、`Server`
+
+```java
+// Client
+AbstractRPCClient abstractRpcClient = new DefaultRPCClient("127.0.0.1",8888); 
+// 改成下面这句
+AbstractRPCClient abstractRpcClient = new NettyRPCClient("127.0.0.1",8888);
+
+// Server
+AbstractRPCServer abstractRpcServer = new SingleThreadBIOServer(8888, serviceProvider);
+// 改成下面这句
+AbstractRPCServer abstractRpcServer = new NettyRPCServer(8888, serviceProvider);
+```
 
 效果：
 
@@ -1159,11 +1159,11 @@ RPC的工作方式通常涉及两个主要角色：客户端和服务器。客�
 >               <pattern>%date{HH:mm:ss.SSS} [%thread] %-5level %logger{36} -- %msg%n</pattern>
 >           </encoder>
 >       </appender>
->       
+>         
 >       <root level="info">
 >           <appender-ref ref="CONSOLE" />
 >       </root>
->       
+>         
 >       <!-- 设置Netty的日志级别为INFO -->
 >       <logger name="io.netty" level="INFO" />
 >   </configuration>
@@ -1217,354 +1217,354 @@ RPC的工作方式通常涉及两个主要角色：客户端和服务器。客�
 
 实现：
 
-- （1）新增 `RPCMessage` 对象，统一表示通信过程中传输的对象
+（1）新增 `RPCMessage` 对象，统一表示通信过程中传输的对象
 
-  ```java
-  @Data
-  @Builder
-  public class RPCMessage {
-      private int magicNum;       // 魔数
-      private byte version;       // 版本号
-      private byte serializeTpe;  // 序列化算法
-      private int messageId;      // 消息号
-      private byte messageType;   // 消息类型
-      private int messageLength;  // 消息总长
-      private byte reserve;       // 保留字段
-      private Object data;        // 消息数据
-  }
-  ```
+```java
+@Data
+@Builder
+public class RPCMessage {
+    private int magicNum;       // 魔数
+    private byte version;       // 版本号
+    private byte serializeTpe;  // 序列化算法
+    private int messageId;      // 消息号
+    private byte messageType;   // 消息类型
+    private int messageLength;  // 消息总长
+    private byte reserve;       // 保留字段
+    private Object data;        // 消息数据
+}
+```
 
-- （2）新增 `Serializer` 接口，用于拓展多种序列化方式
+（2）新增 `Serializer` 接口，用于拓展多种序列化方式
 
-  ```java
-  public interface Serializer {
-      // 序列化方法：把对象转成字节数组
-      <T> byte[] serialize(T object);
-      // 反序列化方法：把字节数组转成对象
-      <T> T deserialize(Class<T> clazz, byte[] bytes);
-  }
-  ```
+```java
+public interface Serializer {
+    // 序列化方法：把对象转成字节数组
+    <T> byte[] serialize(T object);
+    // 反序列化方法：把字节数组转成对象
+    <T> T deserialize(Class<T> clazz, byte[] bytes);
+}
+```
 
-- （3）新增 `JdkSerializer` 实现类，实现了 Jdk 版本的序列化方式
+（3）新增 `JdkSerializer` 实现类，实现了 Jdk 版本的序列化方式
 
-  ```java
-  public class JdkSerializer implements Serializer {
-  
-      @Override
-      public <T> byte[] serialize(T object) {
-          byte[] bytes = null;
-          try {
-              ByteArrayOutputStream bos = new ByteArrayOutputStream();
-              ObjectOutputStream oos = new ObjectOutputStream(bos);
-              oos.writeObject(object);
-              oos.flush();
-              bytes = bos.toByteArray();
-              oos.close();
-              bos.close();
-          } catch (IOException e) {
-              e.printStackTrace();
-          }
-          return bytes;
-      }
-  
-      @Override
-      public <T> T deserialize(Class<T> clazz, byte[] bytes) {
-          Object obj = null;
-          try {
-              ByteArrayInputStream bis = new ByteArrayInputStream(bytes);
-              ObjectInputStream ois = new ObjectInputStream(bis);
-              obj = ois.readObject();
-              ois.close();
-              bis.close();
-          } catch (ClassNotFoundException | IOException e) {
-              throw new RuntimeException(e);
-          }
-          return clazz.cast(obj);
-      }
-  }
-  ```
+```java
+public class JdkSerializer implements Serializer {
 
-- （4）新增 `JsonSerializer` 实现类，实现了 Json 版本的序列化方式（注意嵌套）
+    @Override
+    public <T> byte[] serialize(T object) {
+        byte[] bytes = null;
+        try {
+            ByteArrayOutputStream bos = new ByteArrayOutputStream();
+            ObjectOutputStream oos = new ObjectOutputStream(bos);
+            oos.writeObject(object);
+            oos.flush();
+            bytes = bos.toByteArray();
+            oos.close();
+            bos.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return bytes;
+    }
 
-  ```java
-  public class JsonSerializer implements Serializer {
-      private static final Logger logger = LoggerFactory.getLogger(JsonSerializer.class);
-  
-      @Override
-      public <T> byte[] serialize(T object) {
-          return JSON.toJSONString(object, JSONWriter.Feature.WriteClassName).getBytes();
-      }
-      @Override
-      public <T> T deserialize(Class<T> clazz, byte[] bytes) {
-          // 1. JSONReader.Feature.SupportClassForName
-          // 错误原因：not support ClassForName : java.lang.String, you can config 'JSONReader.Feature.SupportClassForName'
-          // 解决 Class<?> 参数类型时出现的问题
-          // 2. JSONReader.Feature.SupportAutoType + JSONWriter.Feature.WriteClassName
-          // 错误原因：class com.alibaba.fastjson2.JSONObject cannot be cast to class com.cj.v8.pojo.User
-          // 解决子属性中是未知 Object 类型的问题
-          return JSON.parseObject(bytes, clazz, JSONReader.Feature.SupportClassForName, JSONReader.Feature.SupportAutoType);
-      }
-  }
-  ```
+    @Override
+    public <T> T deserialize(Class<T> clazz, byte[] bytes) {
+        Object obj = null;
+        try {
+            ByteArrayInputStream bis = new ByteArrayInputStream(bytes);
+            ObjectInputStream ois = new ObjectInputStream(bis);
+            obj = ois.readObject();
+            ois.close();
+            bis.close();
+        } catch (ClassNotFoundException | IOException e) {
+            throw new RuntimeException(e);
+        }
+        return clazz.cast(obj);
+    }
+}
+```
 
-- （5）新增 `KryoSerializer` 实现类，实现了 Kryo 版本的序列化方式（注意导入的版本号）
+（4）新增 `JsonSerializer` 实现类，实现了 Json 版本的序列化方式（注意嵌套）
 
-  ```java
-  public class KryoSerializer implements Serializer {
-      private static final Kryo kryo = new Kryo();
-  
-      static {
-          kryo.register(RPCRequest.class);
-          kryo.register(RPCMessage.class);
-      }
-      @Override
-      public <T> byte[] serialize(T object) {
-          try(ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-              Output output = new Output(byteArrayOutputStream)) {
-              kryo.writeObject(output, object);
-              return output.toBytes();
-          } catch (IOException e) {
-              throw new RuntimeException(e);
-          }
-      }
-  
-      @Override
-      public <T> T deserialize(Class<T> clazz, byte[] bytes) {
-          try(ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(bytes);
-              Input input = new Input(byteArrayInputStream)) {
-              T t = kryo.readObject(input, clazz);
-              return clazz.cast(t);
-          } catch (IOException e) {
-              throw new RuntimeException(e);
-          }
-      }
-  }
-  ```
+```java
+public class JsonSerializer implements Serializer {
+    private static final Logger logger = LoggerFactory.getLogger(JsonSerializer.class);
 
-- （6）新增 `RPCConstant` 常量池，定义了多种常量类型
+    @Override
+    public <T> byte[] serialize(T object) {
+        return JSON.toJSONString(object, JSONWriter.Feature.WriteClassName).getBytes();
+    }
+    @Override
+    public <T> T deserialize(Class<T> clazz, byte[] bytes) {
+        // 1. JSONReader.Feature.SupportClassForName
+        // 错误原因：not support ClassForName : java.lang.String, you can config 'JSONReader.Feature.SupportClassForName'
+        // 解决 Class<?> 参数类型时出现的问题
+        // 2. JSONReader.Feature.SupportAutoType + JSONWriter.Feature.WriteClassName
+        // 错误原因：class com.alibaba.fastjson2.JSONObject cannot be cast to class com.cj.v8.pojo.User
+        // 解决子属性中是未知 Object 类型的问题
+        return JSON.parseObject(bytes, clazz, JSONReader.Feature.SupportClassForName, JSONReader.Feature.SupportAutoType);
+    }
+}
+```
 
-  ```java
-  public interface RPCConstant {
-  
-      int MESSAGE_MAGIC_NUM = "QRPC".hashCode();
-      int MESSAGE_HEADER_LENGTH = 16;
-      byte MESSAGE_VERSION = 1;
-      byte MESSAGE_RESERVE = 0;
-  
-      byte MESSAGE_TYPE_REQUEST = 0;
-      byte MESSAGE_TYPE_RESPONSE = 1;
-  
-      byte MESSAGE_SERIALIZE_JDK = 0;
-      byte MESSAGE_SERIALIZE_JSON = 1;
-  		byte MESSAGE_SERIALIZE_KRYO = 2;
-  
-  }
-  ```
+（5）新增 `KryoSerializer` 实现类，实现了 Kryo 版本的序列化方式（注意导入的版本号）
 
-- （7）新增 `SerializerUtil` 工具类，用于根据序列化类型的值获取序列化类
+```java
+public class KryoSerializer implements Serializer {
+    private static final Kryo kryo = new Kryo();
 
-  ```java
-  public class SerializerUtil {
-      public static Serializer getSerializer(byte serializeType) {
-          switch (serializeType) {
-              case 0:
-                  return new JdkSerializer();
-              case 1:
-                  return new JsonSerializer();
-              case 2:
-                  return new KryoSerializer();
-              default:
-                  return null;
-          }
-      }
-  }
-  ```
+    static {
+        kryo.register(RPCRequest.class);
+        kryo.register(RPCMessage.class);
+    }
+    @Override
+    public <T> byte[] serialize(T object) {
+        try(ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+            Output output = new Output(byteArrayOutputStream)) {
+            kryo.writeObject(output, object);
+            return output.toBytes();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
 
-- （8）新增 `MessageUtil` 工具类，用于根据消息类型的值获取消息类
+    @Override
+    public <T> T deserialize(Class<T> clazz, byte[] bytes) {
+        try(ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(bytes);
+            Input input = new Input(byteArrayInputStream)) {
+            T t = kryo.readObject(input, clazz);
+            return clazz.cast(t);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+}
+```
 
-  ```java
-  public class MessageUtil {
-  
-      public static Class getMessage(byte messageType) {
-          switch (messageType) {
-              case 0:
-                  return RPCRequest.class;
-              case 1:
-                  return RPCResponse.class;
-              default:
-                  return null;
-          }
-      }
-  }
-  ```
+（6）新增 `RPCConstant` 常量池，定义了多种常量类型
 
-- （9）新增 `RPCEncoder` 编码器，用于对消息进行编码
+```java
+public interface RPCConstant {
 
-  ```java
-  public class RPCEncoder extends MessageToByteEncoder<RPCMessage> {
-  
-      @Override
-      protected void encode(ChannelHandlerContext channelHandlerContext, RPCMessage rpcMessage, ByteBuf byteBuf) throws Exception {
-          // 1. 魔数
-          byteBuf.writeInt(rpcMessage.getMagicNum());
-          // 2. 版本号
-          byteBuf.writeByte(rpcMessage.getVersion());
-          // 3. 序列化类型
-          byteBuf.writeByte(rpcMessage.getSerializeTpe());
-          // 4. 消息号
-          byteBuf.writeInt(rpcMessage.getMessageId());
-          // 5. 消息类型
-          byteBuf.writeByte(rpcMessage.getMessageType());
-          // 6. 消息总长: 数据长度 + 头部长度
-          Serializer serializer = SerializerUtil.getSerializer(rpcMessage.getSerializeTpe());
-          byte[] bytes = serializer.serialize(rpcMessage.getData());
-          byteBuf.writeInt(bytes.length + RPCConstant.MESSAGE_HEADER_LENGTH);
-          // 7. 保留字段
-          byteBuf.writeByte(rpcMessage.getReserve());
-          // 8. 消息
-          byteBuf.writeBytes(bytes);
-      }
-  }
-  ```
+    int MESSAGE_MAGIC_NUM = "QRPC".hashCode();
+    int MESSAGE_HEADER_LENGTH = 16;
+    byte MESSAGE_VERSION = 1;
+    byte MESSAGE_RESERVE = 0;
 
-- （10）新增 `RPCDecoder` 编码器，用于对消息进行解码
+    byte MESSAGE_TYPE_REQUEST = 0;
+    byte MESSAGE_TYPE_RESPONSE = 1;
 
-  ```java
-  public class RPCDecoder  extends ByteToMessageDecoder {
-      @Override
-      protected void decode(ChannelHandlerContext channelHandlerContext, ByteBuf byteBuf, List<Object> list) throws Exception {
-          // 1. 读取魔数
-          int magicNum = byteBuf.readInt();
-          if (!checkMagicNum(magicNum)) {
-              throw new IllegalArgumentException("协议错误");
-          }
-          // 2. 读取版本号
-          byte version = byteBuf.readByte();
-          if (!checkVersion(version)) {
-              throw new IllegalArgumentException("版本错误");
-          }
-          // 3. 读取序列化算法
-          byte serializeType = byteBuf.readByte();
-          // 4. 读取消息号
-          int messageId = byteBuf.readInt();
-          // 5. 读取消息类型
-          byte messageType = byteBuf.readByte();
-          // 6. 读取消息总长
-          int messageLength = byteBuf.readInt();
-          // 7. 保留
-          byte reserve = byteBuf.readByte();
-          // 8. 解析对象
-          // 8.1 对象长度 = 消息总长 - 消息头部长度
-          int objectLength = messageLength - RPCConstant.MESSAGE_HEADER_LENGTH;
-          byte[] objectBytes = new byte[objectLength];
-          byteBuf.readBytes(objectBytes);
-          // 8.2 根据序列化算法得到真正的序列化算法
-          Serializer serializer = SerializerUtil.getSerializer(serializeType);
-          // 8.3 根据消息类型得到真正的消息类
-          Class clazz = MessageUtil.getMessage(messageType);
-          // 8.4 解析出消息
-          Object obj = serializer.deserialize(clazz, objectBytes);
-          // 8.3 写入结果集
-          list.add(obj);
-      }
-  
-      private boolean checkMagicNum(int magicNum) {
-          if (magicNum != RPCConstant.MESSAGE_MAGIC_NUM) {
-              return false;
-          }
-          return true;
-      }
-      private boolean checkVersion(byte version) {
-          if (version != RPCConstant.MESSAGE_VERSION) {
-              return false;
-          }
-          return true;
-      }
-  }
-  ```
+    byte MESSAGE_SERIALIZE_JDK = 0;
+    byte MESSAGE_SERIALIZE_JSON = 1;
+		byte MESSAGE_SERIALIZE_KRYO = 2;
 
-- （11）修改 `NettyRPCClient` 客户端，统一发送 RPCMessage
+}
+```
 
-  ```java
-  @Override
-  public RPCResponse sendRPCRequest(RPCRequest request) {
-      CompletableFuture<RPCResponse> completableFuture = new CompletableFuture<>();
-      ChannelFuture channelFuture = new Bootstrap()
-              .group(new NioEventLoopGroup())
-              .channel(NioSocketChannel.class)
-              .handler(new ChannelInitializer<NioSocketChannel>() {
-                  @Override
-                  protected void initChannel(NioSocketChannel nioSocketChannel) throws Exception {
-                      **// 解码器
-                      nioSocketChannel.pipeline().addLast(new RPCDecoder());
-                      // 入站处理器
-                      nioSocketChannel.pipeline().addLast(new NettyRPCClientHandler(completableFuture));
-                      // 编码器
-                      nioSocketChannel.pipeline().addLast(new RPCEncoder());**
-                  }
-              })
-              .connect(new InetSocketAddress(getHost(), getPort()));
-      try {
-          // 同步阻塞，直到连接建立完成发送结果
-          channelFuture.sync();
-          logger.info("Netty 客户端连接建立成功...");
-          Channel channel = channelFuture.channel();
-  
-          **// 构造发送数据
-          RPCMessage rpcMessage = RPCMessage.builder()
-                  .magicNum(RPCConstant.MESSAGE_MAGIC_NUM)
-                  .version(RPCConstant.MESSAGE_VERSION)
-                  .messageType(RPCConstant.MESSAGE_TYPE_REQUEST)
-                  .serializeTpe(RPCConstant.MESSAGE_SERIALIZE_JSON) // 可换成其它的序列化方式
-                  .data(request)
-                  .build();
-  
-          channel.writeAndFlush(rpcMessage);
-          logger.info("Netty 客户端发送：[{}]", rpcMessage);**
-  
-          // 异步获取处理结果
-          return completableFuture.get();
-      } catch (InterruptedException | ExecutionException e) {
-          throw new RuntimeException(e);
-      }
-  }
-  ```
+（7）新增 `SerializerUtil` 工具类，用于根据序列化类型的值获取序列化类
 
-- （12）修改 `NettyRPCServerHandler` 服务端处理器，统一发送 RPCMessage
+```java
+public class SerializerUtil {
+    public static Serializer getSerializer(byte serializeType) {
+        switch (serializeType) {
+            case 0:
+                return new JdkSerializer();
+            case 1:
+                return new JsonSerializer();
+            case 2:
+                return new KryoSerializer();
+            default:
+                return null;
+        }
+    }
+}
+```
 
-  ```java
-  @Override
-  protected void channelRead0(ChannelHandlerContext channelHandlerContext, RPCRequest rpcRequest) throws Exception {
-      try {
-          logger.info("Netty 服务端接收: [{}]", rpcRequest);
-          // 得到服务名
-          String serviceName = rpcRequest.getInterfaceName();
-          // 得到服务实现类
-          Object service = serviceProvider.getService(serviceName);
-          // 反射调用方法
-          Method method = service.getClass().getMethod(rpcRequest.getMethodName(), rpcRequest.getArgsTypes());
-          Object obj = method.invoke(service, rpcRequest.getArgs());
-          // 封装结果
-          RPCResponse response = RPCResponse.ok(obj);
-          // 写入管道
-          Channel channel = channelHandlerContext.channel();
-  
-          **// 构造消息
-          RPCMessage rpcMessage = RPCMessage.builder()
-                  .magicNum(RPCConstant.MESSAGE_MAGIC_NUM)
-                  .version(RPCConstant.MESSAGE_VERSION)
-                  .messageType(RPCConstant.MESSAGE_TYPE_RESPONSE)
-                  .serializeTpe(RPCConstant.MESSAGE_SERIALIZE_JSON)
-                  .data(response)
-                  .build();
-  
-          channel.writeAndFlush(rpcMessage);
-          logger.info("Netty 服务端发送：[{}]", rpcMessage);**
-      } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
-          e.printStackTrace();
-      }
-  }
-  ```
+（8）新增 `MessageUtil` 工具类，用于根据消息类型的值获取消息类
+
+```java
+public class MessageUtil {
+
+    public static Class getMessage(byte messageType) {
+        switch (messageType) {
+            case 0:
+                return RPCRequest.class;
+            case 1:
+                return RPCResponse.class;
+            default:
+                return null;
+        }
+    }
+}
+```
+
+（9）新增 `RPCEncoder` 编码器，用于对消息进行编码
+
+```java
+public class RPCEncoder extends MessageToByteEncoder<RPCMessage> {
+
+    @Override
+    protected void encode(ChannelHandlerContext channelHandlerContext, RPCMessage rpcMessage, ByteBuf byteBuf) throws Exception {
+        // 1. 魔数
+        byteBuf.writeInt(rpcMessage.getMagicNum());
+        // 2. 版本号
+        byteBuf.writeByte(rpcMessage.getVersion());
+        // 3. 序列化类型
+        byteBuf.writeByte(rpcMessage.getSerializeTpe());
+        // 4. 消息号
+        byteBuf.writeInt(rpcMessage.getMessageId());
+        // 5. 消息类型
+        byteBuf.writeByte(rpcMessage.getMessageType());
+        // 6. 消息总长: 数据长度 + 头部长度
+        Serializer serializer = SerializerUtil.getSerializer(rpcMessage.getSerializeTpe());
+        byte[] bytes = serializer.serialize(rpcMessage.getData());
+        byteBuf.writeInt(bytes.length + RPCConstant.MESSAGE_HEADER_LENGTH);
+        // 7. 保留字段
+        byteBuf.writeByte(rpcMessage.getReserve());
+        // 8. 消息
+        byteBuf.writeBytes(bytes);
+    }
+}
+```
+
+（10）新增 `RPCDecoder` 编码器，用于对消息进行解码
+
+```java
+public class RPCDecoder  extends ByteToMessageDecoder {
+    @Override
+    protected void decode(ChannelHandlerContext channelHandlerContext, ByteBuf byteBuf, List<Object> list) throws Exception {
+        // 1. 读取魔数
+        int magicNum = byteBuf.readInt();
+        if (!checkMagicNum(magicNum)) {
+            throw new IllegalArgumentException("协议错误");
+        }
+        // 2. 读取版本号
+        byte version = byteBuf.readByte();
+        if (!checkVersion(version)) {
+            throw new IllegalArgumentException("版本错误");
+        }
+        // 3. 读取序列化算法
+        byte serializeType = byteBuf.readByte();
+        // 4. 读取消息号
+        int messageId = byteBuf.readInt();
+        // 5. 读取消息类型
+        byte messageType = byteBuf.readByte();
+        // 6. 读取消息总长
+        int messageLength = byteBuf.readInt();
+        // 7. 保留
+        byte reserve = byteBuf.readByte();
+        // 8. 解析对象
+        // 8.1 对象长度 = 消息总长 - 消息头部长度
+        int objectLength = messageLength - RPCConstant.MESSAGE_HEADER_LENGTH;
+        byte[] objectBytes = new byte[objectLength];
+        byteBuf.readBytes(objectBytes);
+        // 8.2 根据序列化算法得到真正的序列化算法
+        Serializer serializer = SerializerUtil.getSerializer(serializeType);
+        // 8.3 根据消息类型得到真正的消息类
+        Class clazz = MessageUtil.getMessage(messageType);
+        // 8.4 解析出消息
+        Object obj = serializer.deserialize(clazz, objectBytes);
+        // 8.3 写入结果集
+        list.add(obj);
+    }
+
+    private boolean checkMagicNum(int magicNum) {
+        if (magicNum != RPCConstant.MESSAGE_MAGIC_NUM) {
+            return false;
+        }
+        return true;
+    }
+    private boolean checkVersion(byte version) {
+        if (version != RPCConstant.MESSAGE_VERSION) {
+            return false;
+        }
+        return true;
+    }
+}
+```
+
+（11）修改 `NettyRPCClient` 客户端，统一发送 RPCMessage
+
+```java
+@Override
+public RPCResponse sendRPCRequest(RPCRequest request) {
+    CompletableFuture<RPCResponse> completableFuture = new CompletableFuture<>();
+    ChannelFuture channelFuture = new Bootstrap()
+            .group(new NioEventLoopGroup())
+            .channel(NioSocketChannel.class)
+            .handler(new ChannelInitializer<NioSocketChannel>() {
+                @Override
+                protected void initChannel(NioSocketChannel nioSocketChannel) throws Exception {
+                    **// 解码器
+                    nioSocketChannel.pipeline().addLast(new RPCDecoder());
+                    // 入站处理器
+                    nioSocketChannel.pipeline().addLast(new NettyRPCClientHandler(completableFuture));
+                    // 编码器
+                    nioSocketChannel.pipeline().addLast(new RPCEncoder());**
+                }
+            })
+            .connect(new InetSocketAddress(getHost(), getPort()));
+    try {
+        // 同步阻塞，直到连接建立完成发送结果
+        channelFuture.sync();
+        logger.info("Netty 客户端连接建立成功...");
+        Channel channel = channelFuture.channel();
+
+        **// 构造发送数据
+        RPCMessage rpcMessage = RPCMessage.builder()
+                .magicNum(RPCConstant.MESSAGE_MAGIC_NUM)
+                .version(RPCConstant.MESSAGE_VERSION)
+                .messageType(RPCConstant.MESSAGE_TYPE_REQUEST)
+                .serializeTpe(RPCConstant.MESSAGE_SERIALIZE_JSON) // 可换成其它的序列化方式
+                .data(request)
+                .build();
+
+        channel.writeAndFlush(rpcMessage);
+        logger.info("Netty 客户端发送：[{}]", rpcMessage);**
+
+        // 异步获取处理结果
+        return completableFuture.get();
+    } catch (InterruptedException | ExecutionException e) {
+        throw new RuntimeException(e);
+    }
+}
+```
+
+（12）修改 `NettyRPCServerHandler` 服务端处理器，统一发送 RPCMessage
+
+```java
+@Override
+protected void channelRead0(ChannelHandlerContext channelHandlerContext, RPCRequest rpcRequest) throws Exception {
+    try {
+        logger.info("Netty 服务端接收: [{}]", rpcRequest);
+        // 得到服务名
+        String serviceName = rpcRequest.getInterfaceName();
+        // 得到服务实现类
+        Object service = serviceProvider.getService(serviceName);
+        // 反射调用方法
+        Method method = service.getClass().getMethod(rpcRequest.getMethodName(), rpcRequest.getArgsTypes());
+        Object obj = method.invoke(service, rpcRequest.getArgs());
+        // 封装结果
+        RPCResponse response = RPCResponse.ok(obj);
+        // 写入管道
+        Channel channel = channelHandlerContext.channel();
+
+        **// 构造消息
+        RPCMessage rpcMessage = RPCMessage.builder()
+                .magicNum(RPCConstant.MESSAGE_MAGIC_NUM)
+                .version(RPCConstant.MESSAGE_VERSION)
+                .messageType(RPCConstant.MESSAGE_TYPE_RESPONSE)
+                .serializeTpe(RPCConstant.MESSAGE_SERIALIZE_JSON)
+                .data(response)
+                .build();
+
+        channel.writeAndFlush(rpcMessage);
+        logger.info("Netty 服务端发送：[{}]", rpcMessage);**
+    } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
+        e.printStackTrace();
+    }
+}
+```
 
 效果：
 
@@ -1618,277 +1618,277 @@ Zookeeper 应用：
 
 实现过程：
 
-- （1）新增 `ServiceRegistry` 服务注册中心接口
+（1）新增 `ServiceRegistry` 服务注册中心接口
 
-  ```java
-  public interface ServiceRegistry {
-      // 功能一：服务注册
-      void registerService(String serviceName, InetSocketAddress serverAddress);
-      // 功能二：服务发现
-      InetSocketAddress discoverService(String serviceName);
-  }
-  ```
+```java
+public interface ServiceRegistry {
+    // 功能一：服务注册
+    void registerService(String serviceName, InetSocketAddress serverAddress);
+    // 功能二：服务发现
+    InetSocketAddress discoverService(String serviceName);
+}
+```
 
-- （2）新增 `ZkServiceRegistry` 服务注册中心实现类
+（2）新增 `ZkServiceRegistry` 服务注册中心实现类
 
-  ```java
-  public class ZkServiceRegistry implements ServiceRegistry {
-      // Zookeeper 的客户端 curator
-      private CuratorFramework curator;
-      // Zookeeper 的根目录 "quick-rpc"
-      private static final String ROOT_PATH = "quick-rpc";
-      // Zookeeper 的集群地址（目前只搭建一个）
-      private static final String CLUSTER_ADDRESS = "127.0.0.1:2181";
-  
-      private static final Logger logger = LoggerFactory.getLogger(ZkServiceRegistry.class);
-  
-      // Zookeeper 的配置
-      public ZkServiceRegistry() {
-          this.curator = CuratorFrameworkFactory.builder()
-                  .connectString(CLUSTER_ADDRESS)
-                  .sessionTimeoutMs(40000)
-                  .retryPolicy(new ExponentialBackoffRetry(1000, 3))
-                  .namespace(ROOT_PATH)
-                  .build();
-          this.curator.start();
-          logger.info("Zookeeper 连接成功: {}", curator);
-      }
-  
-      @Override
-      public void registerService(String serviceName, InetSocketAddress serverAddress) {
-          // 服务名称路径
-          String serviceNamePath = "/" + serviceName;
-          // 服务提供者路径
-          String serviceProviderPath = serviceNamePath + "/" + ServiceUtil.getServerAddress(serverAddress);
-          try {
-              // 1. 为服务创建永久节点，方便后续服务提供者时无需再建服务
-              if (curator.checkExists().forPath(serviceNamePath) == null) {
-                  curator.create().creatingParentsIfNeeded().withMode(CreateMode.PERSISTENT).forPath(serviceNamePath);
-              }
-              // 2. 为服务提供者创建临时节点，方便服务提供者故障时下线处理
-              curator.create().creatingParentsIfNeeded().withMode(CreateMode.EPHEMERAL).forPath(serviceProviderPath);
-              logger.info("注册服务: {}:{}", serviceName, serverAddress);
-          } catch (Exception e) {
-              logger.info("服务已存在: {}", e.getMessage());
-          }
-      }
-  
-      @Override
-      public InetSocketAddress discoverService(String serviceName) {
-          try {
-  						List<String> servicePaths = curator.getChildren().forPath("/" + serviceName);
-              // 默认采用第一个
-              InetSocketAddress serverAddress = ServiceUtil.getServerAddress(servicePaths.get(0));
-              logger.info("发现服务: {}:{}", serviceName, serverAddress);
-              return serverAddress;
-          } catch (Exception e) {
-              e.printStackTrace();
-              return null;
-          }
-      }
-  }
-  ```
+```java
+public class ZkServiceRegistry implements ServiceRegistry {
+    // Zookeeper 的客户端 curator
+    private CuratorFramework curator;
+    // Zookeeper 的根目录 "quick-rpc"
+    private static final String ROOT_PATH = "quick-rpc";
+    // Zookeeper 的集群地址（目前只搭建一个）
+    private static final String CLUSTER_ADDRESS = "127.0.0.1:2181";
 
-- （3）重构 `ServiceProvider` 服务提供者接口，新增一个发布服务的方法
+    private static final Logger logger = LoggerFactory.getLogger(ZkServiceRegistry.class);
 
-  ```java
-  void pubService(String serviceName);
-  ```
+    // Zookeeper 的配置
+    public ZkServiceRegistry() {
+        this.curator = CuratorFrameworkFactory.builder()
+                .connectString(CLUSTER_ADDRESS)
+                .sessionTimeoutMs(40000)
+                .retryPolicy(new ExponentialBackoffRetry(1000, 3))
+                .namespace(ROOT_PATH)
+                .build();
+        this.curator.start();
+        logger.info("Zookeeper 连接成功: {}", curator);
+    }
 
-- （4）重构 `DefaultServiceProvider` 服务提供者，绑定服务注册中心，实现发布服务方法
+    @Override
+    public void registerService(String serviceName, InetSocketAddress serverAddress) {
+        // 服务名称路径
+        String serviceNamePath = "/" + serviceName;
+        // 服务提供者路径
+        String serviceProviderPath = serviceNamePath + "/" + ServiceUtil.getServerAddress(serverAddress);
+        try {
+            // 1. 为服务创建永久节点，方便后续服务提供者时无需再建服务
+            if (curator.checkExists().forPath(serviceNamePath) == null) {
+                curator.create().creatingParentsIfNeeded().withMode(CreateMode.PERSISTENT).forPath(serviceNamePath);
+            }
+            // 2. 为服务提供者创建临时节点，方便服务提供者故障时下线处理
+            curator.create().creatingParentsIfNeeded().withMode(CreateMode.EPHEMERAL).forPath(serviceProviderPath);
+            logger.info("注册服务: {}:{}", serviceName, serverAddress);
+        } catch (Exception e) {
+            logger.info("服务已存在: {}", e.getMessage());
+        }
+    }
 
-  ```java
-  public class DefaultServiceProvider implements ServiceProvider {
-      private final Map<String, Object> services;
-      private final ServiceRegistry serviceRegistry;
-      private final String host;
-      private final int port;
-      public DefaultServiceProvider(String host, int port, ServiceRegistry serviceRegistry) {
-          this.services = new HashMap<>();
-          this.serviceRegistry = serviceRegistry;
-          this.host = host;
-          this.port = port;
-      }
-  
-      @Override
-      public void addService(String serviceName, Object service) {
-          services.put(serviceName, service);
-      }
-  
-      @Override
-      public Object getService(String serviceName) {
-          return services.get(serviceName);
-      }
-  
-      @Override
-      public void delService(String serviceName) {
-          services.remove(serviceName);
-      }
-  
-      @Override
-      public void pubService(String serviceName) {
-          serviceRegistry.registerService(serviceName, new InetSocketAddress(host, port));
-      }
-  }
-  ```
+    @Override
+    public InetSocketAddress discoverService(String serviceName) {
+        try {
+						List<String> servicePaths = curator.getChildren().forPath("/" + serviceName);
+            // 默认采用第一个
+            InetSocketAddress serverAddress = ServiceUtil.getServerAddress(servicePaths.get(0));
+            logger.info("发现服务: {}:{}", serviceName, serverAddress);
+            return serverAddress;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+}
+```
 
-- （5）重构 `AbstractRPCClient` 客户端，绑定服务注册中心
+（3）重构 `ServiceProvider` 服务提供者接口，新增一个发布服务的方法
 
-  ```java
-  private ServiceRegistry serviceRegistry;
-  ```
+```java
+void pubService(String serviceName);
+```
 
-- （6）重构 `DefaultRPCClient` 客户端的发布请求方法
+（4）重构 `DefaultServiceProvider` 服务提供者，绑定服务注册中心，实现发布服务方法
 
-  ```java
-  public class DefaultRPCClient extends AbstractRPCClient {
-      private static final Logger logger = LoggerFactory.getLogger(DefaultRPCClient.class);
-  
-      **public DefaultRPCClient(ServiceRegistry serviceRegistry) {
-          super(serviceRegistry);
-      }**
-  
-      @Override
-      public RPCResponse sendRPCRequest(RPCRequest request) {
-          **InetSocketAddress address = getServiceRegistry().discoverService(request.getInterfaceName());
-          String host = address.getHostName();
-          int port = address.getPort();**
-  
-          try {
-              **// 连接服务器**
-  						**Socket socket = new Socket(host, port);
-              logger.info("默认客户端连接服务: {}:{}", host, port);**
-  
-              if (socket.isConnected()) {
-                  // 得到 IO 流
-                  ObjectOutputStream objectOutputStream = new ObjectOutputStream(socket.getOutputStream());
-                  ObjectInputStream objectInputStream = new ObjectInputStream(socket.getInputStream());
-  
-                  // 传入请求
-                  objectOutputStream.writeObject(request);
-                  objectOutputStream.flush();
-                  // 得到数据
-                  RPCResponse response = (RPCResponse) objectInputStream.readObject();
-                  logger.info("客户端收到：{}", response);
-  
-                  // 关闭 IO 流
-                  objectInputStream.close();
-                  objectOutputStream.close();
-  
-                  // 返回请求
-                  return response;
-              }
-              // 关闭连接
-              socket.close();
-          } catch (IOException | ClassNotFoundException e) {
-              throw new RuntimeException(e);
-          }
-          return null;
-      }
-  }
-  ```
+```java
+public class DefaultServiceProvider implements ServiceProvider {
+    private final Map<String, Object> services;
+    private final ServiceRegistry serviceRegistry;
+    private final String host;
+    private final int port;
+    public DefaultServiceProvider(String host, int port, ServiceRegistry serviceRegistry) {
+        this.services = new HashMap<>();
+        this.serviceRegistry = serviceRegistry;
+        this.host = host;
+        this.port = port;
+    }
 
-- （7）重构 `NettyRPCClient` 客户端的请求方法
+    @Override
+    public void addService(String serviceName, Object service) {
+        services.put(serviceName, service);
+    }
 
-  ```java
-  public class NettyRPCClient extends AbstractRPCClient {
-      private static final Logger logger = LoggerFactory.getLogger(NettyRPCClient.class);
-  
-      **public NettyRPCClient(ServiceRegistry serviceRegistry) {
-          super(serviceRegistry);
-      }**
-      @Override
-      public RPCResponse sendRPCRequest(RPCRequest request) {
-          **InetSocketAddress address = getServiceRegistry().discoverService(request.getInterfaceName());
-          String host = address.getHostName();
-          int port = address.getPort();**
-  
-          CompletableFuture<RPCResponse> completableFuture = new CompletableFuture<>();
-          ChannelFuture channelFuture = new Bootstrap()
-                  .group(new NioEventLoopGroup())
-                  .channel(NioSocketChannel.class)
-                  .handler(new ChannelInitializer<NioSocketChannel>() {
-                      @Override
-                      protected void initChannel(NioSocketChannel nioSocketChannel) throws Exception {
-                          // 解码器
-                          nioSocketChannel.pipeline().addLast(new RPCDecoder());
-                          // 入站处理器
-                          nioSocketChannel.pipeline().addLast(new NettyRPCClientHandler(completableFuture));
-                          // 编码器
-                          nioSocketChannel.pipeline().addLast(new RPCEncoder());
-                      }
-                  })
-                  **.connect(new InetSocketAddress(host, port));**
-          try {
-              // 同步阻塞，直到连接建立完成发送结果
-              channelFuture.sync();
-  						**logger.info("Netty 客户端连接服务: {}:{}", host, port);**
-  
-              Channel channel = channelFuture.channel();
-              // 构造发送数据
-              RPCMessage rpcMessage = RPCMessage.builder()
-                      .magicNum(RPCConstant.MESSAGE_MAGIC_NUM)
-                      .version(RPCConstant.MESSAGE_VERSION)
-                      .messageType(RPCConstant.MESSAGE_TYPE_REQUEST)
-                      .serializeTpe(RPCConstant.MESSAGE_SERIALIZE_KRYO)
-                      .data(request)
-                      .build();
-  
-              channel.writeAndFlush(rpcMessage);
-              logger.info("Netty 客户端发送：[{}]", rpcMessage);
-              // 异步获取处理结果
-              return completableFuture.get();
-          } catch (InterruptedException | ExecutionException e) {
-              throw new RuntimeException(e);
-          }
-      }
-  }
-  ```
+    @Override
+    public Object getService(String serviceName) {
+        return services.get(serviceName);
+    }
 
-- （8）修改 `Client` ，使客户端绑定注册中心
+    @Override
+    public void delService(String serviceName) {
+        services.remove(serviceName);
+    }
 
-  ```java
-  public class Client {
-      public static void main(String[] args) {
-          **AbstractRPCClient abstractRpcClient = new NettyRPCClient(new ZkServiceRegistry());**
-          // 生成客户端代理类
-          RPCClientProxy rpcClientProxy = new RPCClientProxy(abstractRpcClient);
-  
-          // 代理 user 服务
-          UserService userService = rpcClientProxy.getProxyService(UserService.class);
-          User user = userService.getUser("1");
-  
-          // 代理 book 服务
-          BookService bookService = rpcClientProxy.getProxyService(BookService.class);
-          Book book = bookService.getBook("1");
-      }
-  }
-  ```
+    @Override
+    public void pubService(String serviceName) {
+        serviceRegistry.registerService(serviceName, new InetSocketAddress(host, port));
+    }
+}
+```
 
-- （9）修改 `Server` ，使服务端绑定注册中心
+（5）重构 `AbstractRPCClient` 客户端，绑定服务注册中心
 
-  ```java
-  public class Server {
-      public static void main(String[] args) throws UnknownHostException {
-          // 注册服务
-          UserService userService = new UserServiceImpl();
-          BookService bookService = new BookServiceImpl();
-          **// 添加服务**
-          **ServiceProvider serviceProvider = new DefaultServiceProvider(
-                  InetAddress.getLocalHost().getHostAddress(),
-                  8888,
-                  new ZkServiceRegistry());**
-          serviceProvider.addService(userService.getClass().getInterfaces()[0].getName(), userService);
-          serviceProvider.addService(bookService.getClass().getInterfaces()[0].getName(), bookService);
-          **// 发布服务
-          serviceProvider.pubService(userService.getClass().getInterfaces()[0].getName());
-          serviceProvider.pubService(bookService.getClass().getInterfaces()[0].getName());**
-          // 测试服务
-          AbstractRPCServer abstractRpcServer = new NettyRPCServer(8888, serviceProvider);
-          abstractRpcServer.startServer();
-      }
-  }
-  ```
+```java
+private ServiceRegistry serviceRegistry;
+```
+
+（6）重构 `DefaultRPCClient` 客户端的发布请求方法
+
+```java
+public class DefaultRPCClient extends AbstractRPCClient {
+    private static final Logger logger = LoggerFactory.getLogger(DefaultRPCClient.class);
+
+    **public DefaultRPCClient(ServiceRegistry serviceRegistry) {
+        super(serviceRegistry);
+    }**
+
+    @Override
+    public RPCResponse sendRPCRequest(RPCRequest request) {
+        **InetSocketAddress address = getServiceRegistry().discoverService(request.getInterfaceName());
+        String host = address.getHostName();
+        int port = address.getPort();**
+
+        try {
+            **// 连接服务器**
+						**Socket socket = new Socket(host, port);
+            logger.info("默认客户端连接服务: {}:{}", host, port);**
+
+            if (socket.isConnected()) {
+                // 得到 IO 流
+                ObjectOutputStream objectOutputStream = new ObjectOutputStream(socket.getOutputStream());
+                ObjectInputStream objectInputStream = new ObjectInputStream(socket.getInputStream());
+
+                // 传入请求
+                objectOutputStream.writeObject(request);
+                objectOutputStream.flush();
+                // 得到数据
+                RPCResponse response = (RPCResponse) objectInputStream.readObject();
+                logger.info("客户端收到：{}", response);
+
+                // 关闭 IO 流
+                objectInputStream.close();
+                objectOutputStream.close();
+
+                // 返回请求
+                return response;
+            }
+            // 关闭连接
+            socket.close();
+        } catch (IOException | ClassNotFoundException e) {
+            throw new RuntimeException(e);
+        }
+        return null;
+    }
+}
+```
+
+（7）重构 `NettyRPCClient` 客户端的请求方法
+
+```java
+public class NettyRPCClient extends AbstractRPCClient {
+    private static final Logger logger = LoggerFactory.getLogger(NettyRPCClient.class);
+
+    **public NettyRPCClient(ServiceRegistry serviceRegistry) {
+        super(serviceRegistry);
+    }**
+    @Override
+    public RPCResponse sendRPCRequest(RPCRequest request) {
+        **InetSocketAddress address = getServiceRegistry().discoverService(request.getInterfaceName());
+        String host = address.getHostName();
+        int port = address.getPort();**
+
+        CompletableFuture<RPCResponse> completableFuture = new CompletableFuture<>();
+        ChannelFuture channelFuture = new Bootstrap()
+                .group(new NioEventLoopGroup())
+                .channel(NioSocketChannel.class)
+                .handler(new ChannelInitializer<NioSocketChannel>() {
+                    @Override
+                    protected void initChannel(NioSocketChannel nioSocketChannel) throws Exception {
+                        // 解码器
+                        nioSocketChannel.pipeline().addLast(new RPCDecoder());
+                        // 入站处理器
+                        nioSocketChannel.pipeline().addLast(new NettyRPCClientHandler(completableFuture));
+                        // 编码器
+                        nioSocketChannel.pipeline().addLast(new RPCEncoder());
+                    }
+                })
+                **.connect(new InetSocketAddress(host, port));**
+        try {
+            // 同步阻塞，直到连接建立完成发送结果
+            channelFuture.sync();
+						**logger.info("Netty 客户端连接服务: {}:{}", host, port);**
+
+            Channel channel = channelFuture.channel();
+            // 构造发送数据
+            RPCMessage rpcMessage = RPCMessage.builder()
+                    .magicNum(RPCConstant.MESSAGE_MAGIC_NUM)
+                    .version(RPCConstant.MESSAGE_VERSION)
+                    .messageType(RPCConstant.MESSAGE_TYPE_REQUEST)
+                    .serializeTpe(RPCConstant.MESSAGE_SERIALIZE_KRYO)
+                    .data(request)
+                    .build();
+
+            channel.writeAndFlush(rpcMessage);
+            logger.info("Netty 客户端发送：[{}]", rpcMessage);
+            // 异步获取处理结果
+            return completableFuture.get();
+        } catch (InterruptedException | ExecutionException e) {
+            throw new RuntimeException(e);
+        }
+    }
+}
+```
+
+（8）修改 `Client` ，使客户端绑定注册中心
+
+```java
+public class Client {
+    public static void main(String[] args) {
+        **AbstractRPCClient abstractRpcClient = new NettyRPCClient(new ZkServiceRegistry());**
+        // 生成客户端代理类
+        RPCClientProxy rpcClientProxy = new RPCClientProxy(abstractRpcClient);
+
+        // 代理 user 服务
+        UserService userService = rpcClientProxy.getProxyService(UserService.class);
+        User user = userService.getUser("1");
+
+        // 代理 book 服务
+        BookService bookService = rpcClientProxy.getProxyService(BookService.class);
+        Book book = bookService.getBook("1");
+    }
+}
+```
+
+（9）修改 `Server` ，使服务端绑定注册中心
+
+```java
+public class Server {
+    public static void main(String[] args) throws UnknownHostException {
+        // 注册服务
+        UserService userService = new UserServiceImpl();
+        BookService bookService = new BookServiceImpl();
+        **// 添加服务**
+        **ServiceProvider serviceProvider = new DefaultServiceProvider(
+                InetAddress.getLocalHost().getHostAddress(),
+                8888,
+                new ZkServiceRegistry());**
+        serviceProvider.addService(userService.getClass().getInterfaces()[0].getName(), userService);
+        serviceProvider.addService(bookService.getClass().getInterfaces()[0].getName(), bookService);
+        **// 发布服务
+        serviceProvider.pubService(userService.getClass().getInterfaces()[0].getName());
+        serviceProvider.pubService(bookService.getClass().getInterfaces()[0].getName());**
+        // 测试服务
+        AbstractRPCServer abstractRpcServer = new NettyRPCServer(8888, serviceProvider);
+        abstractRpcServer.startServer();
+    }
+}
+```
 
 **效果：**
 
@@ -1913,199 +1913,199 @@ Zookeeper 应用：
 
 实现：
 
-- （1）重构 `ServiceRegistry` 服务注册中心的发现服务方法，使其接收 RPCRequest 参数，以便实现更多负载均衡算法
+（1）重构 `ServiceRegistry` 服务注册中心的发现服务方法，使其接收 RPCRequest 参数，以便实现更多负载均衡算法
 
-  ```java
-  InetSocketAddress discoverService(RPCRequest request);
-  ```
+```java
+InetSocketAddress discoverService(RPCRequest request);
+```
 
-- （2）重构 `ZkServiceRegistry` 服务注册中心的发现服务方法，使其接收 RPCRequest 参数
+（2）重构 `ZkServiceRegistry` 服务注册中心的发现服务方法，使其接收 RPCRequest 参数
 
-  ```java
-  @Override
-  public InetSocketAddress discoverService(RPCRequest request) {
-      String serviceName = request.getInterfaceName();
-      try {
-          List<String> strings = curator.getChildren().forPath("/" + serviceName);
-          // 默认采用第一个
-          InetSocketAddress serverAddress = ServiceUtil.getServerAddress(strings.get(0));
-          logger.info("发现服务: {}:{}", serviceName, serverAddress);
-          return serverAddress;
-      } catch (Exception e) {
-          e.printStackTrace();
-          return null;
-      }
-  }
-  ```
+```java
+@Override
+public InetSocketAddress discoverService(RPCRequest request) {
+    String serviceName = request.getInterfaceName();
+    try {
+        List<String> strings = curator.getChildren().forPath("/" + serviceName);
+        // 默认采用第一个
+        InetSocketAddress serverAddress = ServiceUtil.getServerAddress(strings.get(0));
+        logger.info("发现服务: {}:{}", serviceName, serverAddress);
+        return serverAddress;
+    } catch (Exception e) {
+        e.printStackTrace();
+        return null;
+    }
+}
+```
 
-- （3）新增 `LoadBalance` 负载均衡算法接口
+（3）新增 `LoadBalance` 负载均衡算法接口
 
-  ```java
-  public interface LoadBalance {
-      // 得到服务路径
-      String getServicePath(List<String> servicePaths, RPCRequest request);
-  }
-  ```
+```java
+public interface LoadBalance {
+    // 得到服务路径
+    String getServicePath(List<String> servicePaths, RPCRequest request);
+}
+```
 
-- （4）新增 `RandomLoadBalance` 随机法实现类
+（4）新增 `RandomLoadBalance` 随机法实现类
 
-  ```java
-  public class RandomLoadBalance implements LoadBalance {
-      private static final Random random = new Random();
-      private static final Logger logger = LoggerFactory.getLogger(IpHashLoadBalance.class);
-      @Override
-      public String getServicePath(List<String> servicePaths, RPCRequest request) {
-          String servicePath = servicePaths.get(random.nextInt(servicePaths.size()));
-          logger.info("随机法结果: {}", servicePath);
-          return servicePath;
-      }
-  }
-  ```
+```java
+public class RandomLoadBalance implements LoadBalance {
+    private static final Random random = new Random();
+    private static final Logger logger = LoggerFactory.getLogger(IpHashLoadBalance.class);
+    @Override
+    public String getServicePath(List<String> servicePaths, RPCRequest request) {
+        String servicePath = servicePaths.get(random.nextInt(servicePaths.size()));
+        logger.info("随机法结果: {}", servicePath);
+        return servicePath;
+    }
+}
+```
 
-- （5）新增 `RoundLoadBalance` 轮询法实现类
+（5）新增 `RoundLoadBalance` 轮询法实现类
 
-  ```java
-  public class RoundLoadBalance implements LoadBalance {
-      // 使用原子类保证并发安全
-      private final AtomicInteger index = new AtomicInteger(-1);
-      private static final Logger logger = LoggerFactory.getLogger(IpHashLoadBalance.class);
-  
-      @Override
-      public String getServicePath(List<String> servicePaths, RPCRequest request) {
-          String servicePath = servicePaths.get(index.incrementAndGet() % servicePaths.size());
-          logger.info("轮询法结果: {}", servicePath);
-          return servicePath;
-      }
-  }
-  ```
+```java
+public class RoundLoadBalance implements LoadBalance {
+    // 使用原子类保证并发安全
+    private final AtomicInteger index = new AtomicInteger(-1);
+    private static final Logger logger = LoggerFactory.getLogger(IpHashLoadBalance.class);
 
-- （6）重构 `RPCRequest` 请求，添加一个请求方地址，以便实现 ip-hash 算法
+    @Override
+    public String getServicePath(List<String> servicePaths, RPCRequest request) {
+        String servicePath = servicePaths.get(index.incrementAndGet() % servicePaths.size());
+        logger.info("轮询法结果: {}", servicePath);
+        return servicePath;
+    }
+}
+```
 
-  ```java
-  // 请求方的 ip
-  private String ip;
-  ```
+（6）重构 `RPCRequest` 请求，添加一个请求方地址，以便实现 ip-hash 算法
 
-- （7）重构 `RPCClientProxy`，添加客户端 ip
+```java
+// 请求方的 ip
+private String ip;
+```
 
-  ```java
-  @Override
-  public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-      // 构建请求
-      RPCRequest request = RPCRequest.builder()
-              .interfaceName(method.getDeclaringClass().getName())
-              .methodName(method.getName())
-              .args(args)
-              .argsTypes(method.getParameterTypes())
-              **.ip(InetAddress.getLocalHost().getHostAddress())**
-              .build();
-      // 发送请求
-      RPCResponse response = abstractRpcClient.sendRPCRequest(request);
-      // 返回数据
-      return response.getData();
-  }
-  ```
+（7）重构 `RPCClientProxy`，添加客户端 ip
 
-- （8）新增 `IpHashLoadBalance` IP 哈希算法
+```java
+@Override
+public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+    // 构建请求
+    RPCRequest request = RPCRequest.builder()
+            .interfaceName(method.getDeclaringClass().getName())
+            .methodName(method.getName())
+            .args(args)
+            .argsTypes(method.getParameterTypes())
+            **.ip(InetAddress.getLocalHost().getHostAddress())**
+            .build();
+    // 发送请求
+    RPCResponse response = abstractRpcClient.sendRPCRequest(request);
+    // 返回数据
+    return response.getData();
+}
+```
 
-  ```java
-  public class IpHashLoadBalance implements LoadBalance {
-      private static final Logger logger = LoggerFactory.getLogger(IpHashLoadBalance.class);
-      @Override
-      public String getServicePath(List<String> servicePaths, RPCRequest request) {
-          String ip = request.getIp();
-          String[] ipParts = ip.split("\\\\.");
-          int ipInt =  (131 * (Integer.parseInt(ipParts[0]) & 0xFF)
-                  + 137 * ((Integer.parseInt(ipParts[1]) >> 8) & 0xFF)
-                  + 139 * ((Integer.parseInt(ipParts[2]) >> 16) & 0xFF)
-                  + 149 * ((Integer.parseInt(ipParts[3]) >> 24) & 0xFF));
-          String servicePath = servicePaths.get(ipInt % servicePaths.size());
-          logger.info("IpHash 法结果: {}", servicePath);
-          return servicePath;
-      }
-  }
-  ```
+（8）新增 `IpHashLoadBalance` IP 哈希算法
 
-- （9）重构 `ZkServiceRegistry` ，新增负载均衡算法作为属性
+```java
+public class IpHashLoadBalance implements LoadBalance {
+    private static final Logger logger = LoggerFactory.getLogger(IpHashLoadBalance.class);
+    @Override
+    public String getServicePath(List<String> servicePaths, RPCRequest request) {
+        String ip = request.getIp();
+        String[] ipParts = ip.split("\\\\.");
+        int ipInt =  (131 * (Integer.parseInt(ipParts[0]) & 0xFF)
+                + 137 * ((Integer.parseInt(ipParts[1]) >> 8) & 0xFF)
+                + 139 * ((Integer.parseInt(ipParts[2]) >> 16) & 0xFF)
+                + 149 * ((Integer.parseInt(ipParts[3]) >> 24) & 0xFF));
+        String servicePath = servicePaths.get(ipInt % servicePaths.size());
+        logger.info("IpHash 法结果: {}", servicePath);
+        return servicePath;
+    }
+}
+```
 
-  ```java
-  // 负载均衡算法
-  private LoadBalance loadBalance;
-  
-  public ZkServiceRegistry(**LoadBalance loadBalance**) {
-      this.curator = CuratorFrameworkFactory.builder()
-              .connectString(CLUSTER_ADDRESS)
-              .sessionTimeoutMs(40000)
-              .retryPolicy(new ExponentialBackoffRetry(1000, 3))
-              .namespace(ROOT_PATH)
-              .build();
-      this.curator.start();
-      **this.loadBalance = loadBalance;**
-      logger.info("Zookeeper 连接成功: {}", curator);
-  }
-  
-  @Override
-  public InetSocketAddress discoverService(RPCRequest request) {
-      String serviceName = request.getInterfaceName();
-      try {
-          List<String> servicePaths = curator.getChildren().forPath("/" + serviceName);
-          **// 采用负载均衡算法
-          String servicePath = loadBalance.getServicePath(servicePaths, request);
-          InetSocketAddress serverAddress = ServiceUtil.getServerAddress(servicePath);**
-          logger.info("发现服务: {}:{}", serviceName, serverAddress);
-          return serverAddress;
-      } catch (Exception e) {
-          e.printStackTrace();
-          return null;
-      }
-  }
-  ```
+（9）重构 `ZkServiceRegistry` ，新增负载均衡算法作为属性
 
-- （10）重构 `Client`，带上 `ServiceRegistry` 参数
+```java
+// 负载均衡算法
+private LoadBalance loadBalance;
 
-  ```java
-  public class Client {
-      public static void main(String[] args) {
-          AbstractRPCClient abstractRpcClient = new NettyRPCClient(new ZkServiceRegistry(new RandomLoadBalance()));
-          // 生成客户端代理类
-          RPCClientProxy rpcClientProxy = new RPCClientProxy(abstractRpcClient);
-  
-          // 代理 user 服务
-          UserService userService = rpcClientProxy.getProxyService(UserService.class);
-          User user = userService.getUser("1");
-  
-          // 代理 book 服务
-          BookService bookService = rpcClientProxy.getProxyService(BookService.class);
-          Book book = bookService.getBook("1");
-      }
-  }
-  ```
+public ZkServiceRegistry(**LoadBalance loadBalance**) {
+    this.curator = CuratorFrameworkFactory.builder()
+            .connectString(CLUSTER_ADDRESS)
+            .sessionTimeoutMs(40000)
+            .retryPolicy(new ExponentialBackoffRetry(1000, 3))
+            .namespace(ROOT_PATH)
+            .build();
+    this.curator.start();
+    **this.loadBalance = loadBalance;**
+    logger.info("Zookeeper 连接成功: {}", curator);
+}
 
-- （11）重构 `Server`，带上 `ServiceRegistry` 参数
+@Override
+public InetSocketAddress discoverService(RPCRequest request) {
+    String serviceName = request.getInterfaceName();
+    try {
+        List<String> servicePaths = curator.getChildren().forPath("/" + serviceName);
+        **// 采用负载均衡算法
+        String servicePath = loadBalance.getServicePath(servicePaths, request);
+        InetSocketAddress serverAddress = ServiceUtil.getServerAddress(servicePath);**
+        logger.info("发现服务: {}:{}", serviceName, serverAddress);
+        return serverAddress;
+    } catch (Exception e) {
+        e.printStackTrace();
+        return null;
+    }
+}
+```
 
-  ```java
-  public class Server {
-      private static final int port = 8888;
-      public static void main(String[] args) throws UnknownHostException {
-          // 注册服务
-          UserService userService = new UserServiceImpl();
-          BookService bookService = new BookServiceImpl();
-          // 添加服务
-          ServiceProvider serviceProvider = new DefaultServiceProvider(
-                  InetAddress.getLocalHost().getHostAddress(),
-                  port,
-                  new ZkServiceRegistry(new RandomLoadBalance()));
-          serviceProvider.addService(userService.getClass().getInterfaces()[0].getName(), userService);
-          serviceProvider.addService(bookService.getClass().getInterfaces()[0].getName(), bookService);
-          // 发布服务
-          serviceProvider.pubService(userService.getClass().getInterfaces()[0].getName());
-          serviceProvider.pubService(bookService.getClass().getInterfaces()[0].getName());
-          // 测试服务
-          AbstractRPCServer abstractRpcServer = new NettyRPCServer(port, serviceProvider);
-          abstractRpcServer.startServer();
-      }
-  }
-  ```
+（10）重构 `Client`，带上 `ServiceRegistry` 参数
+
+```java
+public class Client {
+    public static void main(String[] args) {
+        AbstractRPCClient abstractRpcClient = new NettyRPCClient(new ZkServiceRegistry(new RandomLoadBalance()));
+        // 生成客户端代理类
+        RPCClientProxy rpcClientProxy = new RPCClientProxy(abstractRpcClient);
+
+        // 代理 user 服务
+        UserService userService = rpcClientProxy.getProxyService(UserService.class);
+        User user = userService.getUser("1");
+
+        // 代理 book 服务
+        BookService bookService = rpcClientProxy.getProxyService(BookService.class);
+        Book book = bookService.getBook("1");
+    }
+}
+```
+
+（11）重构 `Server`，带上 `ServiceRegistry` 参数
+
+```java
+public class Server {
+    private static final int port = 8888;
+    public static void main(String[] args) throws UnknownHostException {
+        // 注册服务
+        UserService userService = new UserServiceImpl();
+        BookService bookService = new BookServiceImpl();
+        // 添加服务
+        ServiceProvider serviceProvider = new DefaultServiceProvider(
+                InetAddress.getLocalHost().getHostAddress(),
+                port,
+                new ZkServiceRegistry(new RandomLoadBalance()));
+        serviceProvider.addService(userService.getClass().getInterfaces()[0].getName(), userService);
+        serviceProvider.addService(bookService.getClass().getInterfaces()[0].getName(), bookService);
+        // 发布服务
+        serviceProvider.pubService(userService.getClass().getInterfaces()[0].getName());
+        serviceProvider.pubService(bookService.getClass().getInterfaces()[0].getName());
+        // 测试服务
+        AbstractRPCServer abstractRpcServer = new NettyRPCServer(port, serviceProvider);
+        abstractRpcServer.startServer();
+    }
+}
+```
 
 测试之前，拷贝几个 Server，改变端口号即可运行
 
@@ -2141,27 +2141,27 @@ private static final int port = 8890;
 
 实现：
 
-- （1）修订序列化方式常量的存放位置，`RPCConstant` ⇒ `Serializer`
+（1）修订序列化方式常量的存放位置，`RPCConstant` ⇒ `Serializer`
 
-  ```java
-  public interface Serializer {
-  
-      byte SERIALIZER_JAVA = 0;
-      byte SERIALIZER_JSON = 1;
-      byte SERIALIZER_KRYO = 2;
-  
-      // 序列化方法：把对象转成字节数组
-      <T> byte[] serialize(T object);
-      // 反序列化方法：把字节数组转成对象
-      <T> T deserialize(Class<T> clazz, byte[] bytes);
-  }
-  ```
+```java
+public interface Serializer {
 
-- （2）修订部分命名，BIO ⇒ Bio、RPC ⇒ Rpc、Jdk ⇒ Java
+    byte SERIALIZER_JAVA = 0;
+    byte SERIALIZER_JSON = 1;
+    byte SERIALIZER_KRYO = 2;
 
-- （3）重构拆分服务注册中心 `ServiceRegistry` 及 `ZkServiceRegistry` ，修正为 `ServiceDiscovery` 及 `ZkServiceDiscovery` 、`ServiceRegistration` 及 `ZkServiceRegistration`
+    // 序列化方法：把对象转成字节数组
+    <T> byte[] serialize(T object);
+    // 反序列化方法：把字节数组转成对象
+    <T> T deserialize(Class<T> clazz, byte[] bytes);
+}
+```
 
-- （4）修正包名结构
+（2）修订部分命名，BIO ⇒ Bio、RPC ⇒ Rpc、Jdk ⇒ Java
+
+（3）重构拆分服务注册中心 `ServiceRegistry` 及 `ZkServiceRegistry` ，修正为 `ServiceDiscovery` 及 `ZkServiceDiscovery` 、`ServiceRegistration` 及 `ZkServiceRegistration`
+
+（4）修正包名结构
 
 ### v12 版本【增加心跳机制、断开重连机制保证连接安全】
 
@@ -2215,315 +2215,315 @@ ch.pipeline().addLast(new ChannelDuplexHandler() {     // 注意 0 代表不做�
 
 **实现**：增加心跳机制 + 断线重连。
 
-- （1）新增 `RpcPing` 类表示客户端发送的心跳包
+（1）新增 `RpcPing` 类表示客户端发送的心跳包
 
-  ```java
-  @Data
-  public class RpcPing {
-      private final String message;
-  
-      public RpcPing() {
-          try {
-              message = "ping: " + InetAddress.getLocalHost().getHostAddress();
-          } catch (UnknownHostException e) {
-              throw new RuntimeException(e);
-          }
-      }
-  }
-  ```
+```java
+@Data
+public class RpcPing {
+    private final String message;
 
-- （2）新增 `RpcPong` 类表示服务端发送的响应包
+    public RpcPing() {
+        try {
+            message = "ping: " + InetAddress.getLocalHost().getHostAddress();
+        } catch (UnknownHostException e) {
+            throw new RuntimeException(e);
+        }
+    }
+}
+```
 
-  ```java
-  @Data
-  public class RpcPong {
-      private final String message;
-  
-      public RpcPong() {
-          try {
-              message = "pong: " + InetAddress.getLocalHost().getHostAddress();
-          } catch (UnknownHostException e) {
-              throw new RuntimeException(e);
-          }
-      }
-  }
-  ```
+（2）新增 `RpcPong` 类表示服务端发送的响应包
 
-- （3）重构 `RpcConstant` ，添加一个 RpcHeartbeat 类型的消息号
+```java
+@Data
+public class RpcPong {
+    private final String message;
 
-  ```java
-  byte MESSAGE_TYPE_PING = 2;
-  byte MESSAGE_TYPE_PONG = 3;
-  ```
+    public RpcPong() {
+        try {
+            message = "pong: " + InetAddress.getLocalHost().getHostAddress();
+        } catch (UnknownHostException e) {
+            throw new RuntimeException(e);
+        }
+    }
+}
+```
 
-- （4）重构 `MessageUtil`，新增一个表示 RpcHeartbeat 的消息类型
+（3）重构 `RpcConstant` ，添加一个 RpcHeartbeat 类型的消息号
 
-  ```java
-  public class MessageUtil {
-  
-      public static Class getMessage(byte messageType) {
-          switch (messageType) {
-              case 0:
-                  return RpcRequest.class;
-              case 1:
-                  return RpcResponse.class;
-              **case 2:
-                  return RpcPing.class;
-              case 3:
-                  return RpcPong.class;**
-              default:
-                  return null;
-          }
-      }
-  }
-  ```
+```java
+byte MESSAGE_TYPE_PING = 2;
+byte MESSAGE_TYPE_PONG = 3;
+```
 
-- （5）新增 `RpcHeartbeatTrigger` ，用于客户端超过写空闲时间时发送心跳包
+（4）重构 `MessageUtil`，新增一个表示 RpcHeartbeat 的消息类型
 
-  ```java
-  public class RpcHeartbeatTrigger extends SimpleChannelInboundHandler<RpcPong> {
-      private static final Logger logger = LoggerFactory.getLogger(RpcHeartbeatTrigger.class);
-      private final AtomicInteger totalRetry = new AtomicInteger(0);
-      private static final int MAX_RETRY = 5;
-      private final NettyRpcClient client;
-  
-      public RpcHeartbeatTrigger(NettyRpcClient client) {
-          this.totalRetry.set(0);
-          this.client = client;
-      }
-  
-      @Override
-      protected void channelRead0(ChannelHandlerContext channelHandlerContext, RpcPong rpcPong) throws Exception {
-          logger.info("客户端响应 pong: {}", rpcPong);
-      }
-  
-      @Override
-      public void userEventTriggered(ChannelHandlerContext ctx, Object evt) {
-          if (evt instanceof IdleStateEvent) {
-              IdleStateEvent e = (IdleStateEvent) evt;
-              if (e.state() == IdleState.WRITER_IDLE) {           // 发送心跳
-                  handlerPing(ctx.channel());
-              } else if (e.state() == IdleState.READER_IDLE) {    // 接收心跳不及时
-                  handlerRetry(ctx.channel());
-              }
-          }
-      }
-  
-      // 断开重连
-      @Override
-      public void channelInactive(ChannelHandlerContext ctx) {
-          handlerRetry(ctx.channel());
-      }
-  
-      // 心跳检测
-      private void handlerPing(Channel channel) {
-          RpcPing ping = new RpcPing();
-          // 构造发送数据
-          RpcMessage rpcMessage = RpcMessage.builder()
-                  .magicNum(RpcConstant.MESSAGE_MAGIC_NUM)
-                  .version(RpcConstant.MESSAGE_VERSION)
-                  .messageType(RpcConstant.MESSAGE_TYPE_PING)
-                  .serializeTpe(Serializer.SERIALIZER_KRYO)
-                  .data(ping)
-                  .build();
-  
-          channel.writeAndFlush(rpcMessage);
-          logger.info("客户端发送 ping: [{}]", ping);
-      }
-  
-      // 处理重试
-      private void handlerRetry(Channel channel) {
-          logger.info("连接服务端失败，即将进行重试: {}", channel);
-          // 1. 删除原先的 channel
-          InetSocketAddress inetSocketAddress = client.getChannelsHelper().get(channel);
-          client.getChannels().remove(inetSocketAddress);
-          client.getChannelsHelper().remove(channel);
-          // 2. 关闭原先的 channel
-          channel.close();
-          // 3. 进行重试
-          retryConnect(inetSocketAddress);
-      }
-  
-      // 断线重试【每 30s 进行一次尝试连接，连接成功则正常连接，连接失败则重新尝试】
-      // 1. 得到服务端的 channel, 将其删除并重试
-      // 2. 重新尝试连接
-      private void retryConnect(InetSocketAddress inetSocketAddress) {
-          ChannelFuture channelFuture = client.getBootstrap().connect(inetSocketAddress);
-          channelFuture.addListener((ChannelFutureListener) future -> {
-              if (!future.isSuccess()) {                  // 5 次连接过程中失败
-                  // 如果达到最大次数未连接上，那么不再连接
-                  if (totalRetry.get() == MAX_RETRY) {
-                      logger.info("达到最大次数，连接失败!");
-                      return;
-                  }
-                  // 否则 30s 后交给后台线程重新连接
-                  future.channel().eventLoop().schedule(() -> {
-                      totalRetry.getAndIncrement();
-                      logger.info("当前重试次数: {}", totalRetry.get());
-                      retryConnect(inetSocketAddress);
-                  }, 5, TimeUnit.SECONDS);
-              } else {                                    // 5 次连接过程中成功
-                  totalRetry.set(0);
-                  Channel newChannel = future.channel();
-                  client.getChannels().put(inetSocketAddress, newChannel);
-                  client.getChannelsHelper().put(newChannel, inetSocketAddress);
-                  logger.info("重试成功，连接成功!");
-              }
-          });
-      }
-  }
-  ```
+```java
+public class MessageUtil {
 
-- （6）新增 `RpcHeartbeatHandler` ，用于服务端处理接收心跳包消息，以及处理心跳停止情况
+    public static Class getMessage(byte messageType) {
+        switch (messageType) {
+            case 0:
+                return RpcRequest.class;
+            case 1:
+                return RpcResponse.class;
+            **case 2:
+                return RpcPing.class;
+            case 3:
+                return RpcPong.class;**
+            default:
+                return null;
+        }
+    }
+}
+```
 
-  ```java
-  public class RpcHeartbeatHandler extends SimpleChannelInboundHandler<RpcPing> {
-  
-      private static final Logger logger = LoggerFactory.getLogger(RpcHeartbeatHandler.class);
-  
-      // 心跳消息处理
-      @Override
-      protected void channelRead0(ChannelHandlerContext ctx, RpcPing rpcPing) throws Exception {
-          // 处理心跳消息
-          logger.info("服务端收到 ping: [{}]", rpcPing.getMessage());
-          // 返回一个 pong
-          RpcPong pong = new RpcPong();
-          // 构造发送数据
-          RpcMessage rpcMessage = RpcMessage.builder()
-                  .magicNum(RpcConstant.MESSAGE_MAGIC_NUM)
-                  .version(RpcConstant.MESSAGE_VERSION)
-                  .messageType(RpcConstant.MESSAGE_TYPE_PONG)
-                  .serializeTpe(Serializer.SERIALIZER_KRYO)
-                  .data(pong)
-                  .build();
-  
-          ctx.channel().writeAndFlush(rpcMessage);
-          logger.info("服务端响应 pong: [{}]", pong);
-      }
-  
-      // 心跳事件
-      @Override
-      public void userEventTriggered(ChannelHandlerContext ctx, Object evt) {
-          if (evt instanceof IdleStateEvent) {
-              IdleStateEvent e = (IdleStateEvent) evt;
-              // 触发读空闲事件，说明对方出现问题，关闭通道
-              if (e.state() == IdleState.READER_IDLE) {
-                  logger.info("关闭通道: {}", ctx);
-                  ctx.close();
-              }
-          }
-      }
-  }
-  ```
+（5）新增 `RpcHeartbeatTrigger` ，用于客户端超过写空闲时间时发送心跳包
 
-- （7）重构 `NettyRpcServer` ，新增心跳处理，提示心跳消息处理器必须在解码器之后，否则无法解码获得心跳消息
+```java
+public class RpcHeartbeatTrigger extends SimpleChannelInboundHandler<RpcPong> {
+    private static final Logger logger = LoggerFactory.getLogger(RpcHeartbeatTrigger.class);
+    private final AtomicInteger totalRetry = new AtomicInteger(0);
+    private static final int MAX_RETRY = 5;
+    private final NettyRpcClient client;
 
-  ```java
-  @Override
-  public void startServer() {
-      new ServerBootstrap()
-              .group(new NioEventLoopGroup())
-              .channel(NioServerSocketChannel.class)
-              .childHandler(new ChannelInitializer<NioSocketChannel>() {
-                  @Override
-                  protected void initChannel(NioSocketChannel nioSocketChannel) throws Exception {
-                      **// 心跳检测
-                      nioSocketChannel.pipeline().addLast(new IdleStateHandler(60, 0, 0));**
-                      // 解码器
-                      nioSocketChannel.pipeline().addLast(new RPCDecoder());
-                      **// 心跳消息处理器（rpcHeartbeat）
-                      nioSocketChannel.pipeline().addLast(new RpcHeartbeatHandler());**
-                      // 请求消息处理器（rpcRequest）
-                      nioSocketChannel.pipeline().addLast(new RpcRequestHandler(getServiceProvider()));
-                      // 编码器
-                      nioSocketChannel.pipeline().addLast(new RPCEncoder());
-                  }
-              })
-              .bind(getServiceProvider().getPort());
-      logger.info("Netty 服务端等待连接...");
-  }
-  ```
+    public RpcHeartbeatTrigger(NettyRpcClient client) {
+        this.totalRetry.set(0);
+        this.client = client;
+    }
 
-- （8）重构 `NettyRpcClient` ，新增心跳处理，并且重构代码，使得 Channel 能够复用，而不用每次发送请求创建一个新 Channel
+    @Override
+    protected void channelRead0(ChannelHandlerContext channelHandlerContext, RpcPong rpcPong) throws Exception {
+        logger.info("客户端响应 pong: {}", rpcPong);
+    }
 
-  ```java
-  @Data
-  public class NettyRpcClient extends AbstractRpcClient {
-      private static final Logger logger = LoggerFactory.getLogger(NettyRpcClient.class);
-      private final Bootstrap bootstrap;
-      private final Map<InetSocketAddress, Channel> channels;
-      private final Map<Channel, InetSocketAddress> channelsHelper;
-      private final RpcResponseHandler rpcResponseHandler;
-      public NettyRpcClient() {
-          super();
-          this.rpcResponseHandler = new RpcResponseHandler();
-          this.channels = new ConcurrentHashMap<>();
-          this.channelsHelper = new ConcurrentHashMap<>();
-          this.bootstrap = new Bootstrap()
-                  .group(new NioEventLoopGroup())
-                  .channel(NioSocketChannel.class)
-                  .handler(new ChannelInitializer<NioSocketChannel>() {
-                      @Override
-                      protected void initChannel(NioSocketChannel nioSocketChannel) {
-                          // 【心跳检测 + 断线重连】5s 达到写空闲，发送心跳 ping，60s 达到读空闲，断线重连
-                          nioSocketChannel.pipeline().addLast(new IdleStateHandler(60, 5, 0));
-                          // 解码器
-                          nioSocketChannel.pipeline().addLast(new RPCDecoder());
-                          // 心跳触发器
-                          nioSocketChannel.pipeline().addLast(new RpcHeartbeatTrigger(NettyRpcClient.this));
-                          // 入站处理器
-                          nioSocketChannel.pipeline().addLast(rpcResponseHandler);
-                          // 编码器
-                          nioSocketChannel.pipeline().addLast(new RPCEncoder());
-                      }
-                  });
-      }
-  
-      public Channel getChannel(InetSocketAddress inetSocketAddress) {
-          // 如果对应服务的 channel 不存在，则连接获取 channel
-          if (!channels.containsKey(inetSocketAddress)) {
-              try {
-                  Channel channel = bootstrap
-                          .connect(inetSocketAddress)
-                          .sync()
-                          .channel();
-                  channels.put(inetSocketAddress, channel);
-                  channelsHelper.put(channel, inetSocketAddress);
-                  logger.info("Netty 客户端连接服务: {}", inetSocketAddress);
-              } catch (InterruptedException e) {
-                  throw new RuntimeException(e);
-              }
-          }
-          return channels.get(inetSocketAddress);
-      }
-  
-      @Override
-      public RpcResponse sendRPCRequest(RpcRequest request) {
-          try {
-              // 1. 异步结果
-              CompletableFuture<RpcResponse> completableFuture = new CompletableFuture<>();
-              rpcResponseHandler.setCompletableFuture(completableFuture);
-              // 2. 寻找服务所对应的 channel
-              InetSocketAddress address = getServiceDiscovery().discoverService(request);
-              Channel channel = getChannel(address);
-              // 3. 构造发送数据
-              RpcMessage rpcMessage = RpcMessage.builder()
-                      .magicNum(RpcConstant.MESSAGE_MAGIC_NUM)
-                      .version(RpcConstant.MESSAGE_VERSION)
-                      .messageType(RpcConstant.MESSAGE_TYPE_REQUEST)
-                      .serializeTpe(Serializer.SERIALIZER_KRYO)
-                      .data(request)
-                      .build();
-              channel.writeAndFlush(rpcMessage);
-              logger.info("Netty 客户端发送：[{}]", rpcMessage);
-              // 4. 接收异步调用结果
-              return completableFuture.get();
-          } catch (InterruptedException | ExecutionException e) {
-              throw new RuntimeException(e);
-          }
-      }
-  }
-  ```
+    @Override
+    public void userEventTriggered(ChannelHandlerContext ctx, Object evt) {
+        if (evt instanceof IdleStateEvent) {
+            IdleStateEvent e = (IdleStateEvent) evt;
+            if (e.state() == IdleState.WRITER_IDLE) {           // 发送心跳
+                handlerPing(ctx.channel());
+            } else if (e.state() == IdleState.READER_IDLE) {    // 接收心跳不及时
+                handlerRetry(ctx.channel());
+            }
+        }
+    }
+
+    // 断开重连
+    @Override
+    public void channelInactive(ChannelHandlerContext ctx) {
+        handlerRetry(ctx.channel());
+    }
+
+    // 心跳检测
+    private void handlerPing(Channel channel) {
+        RpcPing ping = new RpcPing();
+        // 构造发送数据
+        RpcMessage rpcMessage = RpcMessage.builder()
+                .magicNum(RpcConstant.MESSAGE_MAGIC_NUM)
+                .version(RpcConstant.MESSAGE_VERSION)
+                .messageType(RpcConstant.MESSAGE_TYPE_PING)
+                .serializeTpe(Serializer.SERIALIZER_KRYO)
+                .data(ping)
+                .build();
+
+        channel.writeAndFlush(rpcMessage);
+        logger.info("客户端发送 ping: [{}]", ping);
+    }
+
+    // 处理重试
+    private void handlerRetry(Channel channel) {
+        logger.info("连接服务端失败，即将进行重试: {}", channel);
+        // 1. 删除原先的 channel
+        InetSocketAddress inetSocketAddress = client.getChannelsHelper().get(channel);
+        client.getChannels().remove(inetSocketAddress);
+        client.getChannelsHelper().remove(channel);
+        // 2. 关闭原先的 channel
+        channel.close();
+        // 3. 进行重试
+        retryConnect(inetSocketAddress);
+    }
+
+    // 断线重试【每 30s 进行一次尝试连接，连接成功则正常连接，连接失败则重新尝试】
+    // 1. 得到服务端的 channel, 将其删除并重试
+    // 2. 重新尝试连接
+    private void retryConnect(InetSocketAddress inetSocketAddress) {
+        ChannelFuture channelFuture = client.getBootstrap().connect(inetSocketAddress);
+        channelFuture.addListener((ChannelFutureListener) future -> {
+            if (!future.isSuccess()) {                  // 5 次连接过程中失败
+                // 如果达到最大次数未连接上，那么不再连接
+                if (totalRetry.get() == MAX_RETRY) {
+                    logger.info("达到最大次数，连接失败!");
+                    return;
+                }
+                // 否则 30s 后交给后台线程重新连接
+                future.channel().eventLoop().schedule(() -> {
+                    totalRetry.getAndIncrement();
+                    logger.info("当前重试次数: {}", totalRetry.get());
+                    retryConnect(inetSocketAddress);
+                }, 5, TimeUnit.SECONDS);
+            } else {                                    // 5 次连接过程中成功
+                totalRetry.set(0);
+                Channel newChannel = future.channel();
+                client.getChannels().put(inetSocketAddress, newChannel);
+                client.getChannelsHelper().put(newChannel, inetSocketAddress);
+                logger.info("重试成功，连接成功!");
+            }
+        });
+    }
+}
+```
+
+（6）新增 `RpcHeartbeatHandler` ，用于服务端处理接收心跳包消息，以及处理心跳停止情况
+
+```java
+public class RpcHeartbeatHandler extends SimpleChannelInboundHandler<RpcPing> {
+
+    private static final Logger logger = LoggerFactory.getLogger(RpcHeartbeatHandler.class);
+
+    // 心跳消息处理
+    @Override
+    protected void channelRead0(ChannelHandlerContext ctx, RpcPing rpcPing) throws Exception {
+        // 处理心跳消息
+        logger.info("服务端收到 ping: [{}]", rpcPing.getMessage());
+        // 返回一个 pong
+        RpcPong pong = new RpcPong();
+        // 构造发送数据
+        RpcMessage rpcMessage = RpcMessage.builder()
+                .magicNum(RpcConstant.MESSAGE_MAGIC_NUM)
+                .version(RpcConstant.MESSAGE_VERSION)
+                .messageType(RpcConstant.MESSAGE_TYPE_PONG)
+                .serializeTpe(Serializer.SERIALIZER_KRYO)
+                .data(pong)
+                .build();
+
+        ctx.channel().writeAndFlush(rpcMessage);
+        logger.info("服务端响应 pong: [{}]", pong);
+    }
+
+    // 心跳事件
+    @Override
+    public void userEventTriggered(ChannelHandlerContext ctx, Object evt) {
+        if (evt instanceof IdleStateEvent) {
+            IdleStateEvent e = (IdleStateEvent) evt;
+            // 触发读空闲事件，说明对方出现问题，关闭通道
+            if (e.state() == IdleState.READER_IDLE) {
+                logger.info("关闭通道: {}", ctx);
+                ctx.close();
+            }
+        }
+    }
+}
+```
+
+（7）重构 `NettyRpcServer` ，新增心跳处理，提示心跳消息处理器必须在解码器之后，否则无法解码获得心跳消息
+
+```java
+@Override
+public void startServer() {
+    new ServerBootstrap()
+            .group(new NioEventLoopGroup())
+            .channel(NioServerSocketChannel.class)
+            .childHandler(new ChannelInitializer<NioSocketChannel>() {
+                @Override
+                protected void initChannel(NioSocketChannel nioSocketChannel) throws Exception {
+                    **// 心跳检测
+                    nioSocketChannel.pipeline().addLast(new IdleStateHandler(60, 0, 0));**
+                    // 解码器
+                    nioSocketChannel.pipeline().addLast(new RPCDecoder());
+                    **// 心跳消息处理器（rpcHeartbeat）
+                    nioSocketChannel.pipeline().addLast(new RpcHeartbeatHandler());**
+                    // 请求消息处理器（rpcRequest）
+                    nioSocketChannel.pipeline().addLast(new RpcRequestHandler(getServiceProvider()));
+                    // 编码器
+                    nioSocketChannel.pipeline().addLast(new RPCEncoder());
+                }
+            })
+            .bind(getServiceProvider().getPort());
+    logger.info("Netty 服务端等待连接...");
+}
+```
+
+（8）重构 `NettyRpcClient` ，新增心跳处理，并且重构代码，使得 Channel 能够复用，而不用每次发送请求创建一个新 Channel
+
+```java
+@Data
+public class NettyRpcClient extends AbstractRpcClient {
+    private static final Logger logger = LoggerFactory.getLogger(NettyRpcClient.class);
+    private final Bootstrap bootstrap;
+    private final Map<InetSocketAddress, Channel> channels;
+    private final Map<Channel, InetSocketAddress> channelsHelper;
+    private final RpcResponseHandler rpcResponseHandler;
+    public NettyRpcClient() {
+        super();
+        this.rpcResponseHandler = new RpcResponseHandler();
+        this.channels = new ConcurrentHashMap<>();
+        this.channelsHelper = new ConcurrentHashMap<>();
+        this.bootstrap = new Bootstrap()
+                .group(new NioEventLoopGroup())
+                .channel(NioSocketChannel.class)
+                .handler(new ChannelInitializer<NioSocketChannel>() {
+                    @Override
+                    protected void initChannel(NioSocketChannel nioSocketChannel) {
+                        // 【心跳检测 + 断线重连】5s 达到写空闲，发送心跳 ping，60s 达到读空闲，断线重连
+                        nioSocketChannel.pipeline().addLast(new IdleStateHandler(60, 5, 0));
+                        // 解码器
+                        nioSocketChannel.pipeline().addLast(new RPCDecoder());
+                        // 心跳触发器
+                        nioSocketChannel.pipeline().addLast(new RpcHeartbeatTrigger(NettyRpcClient.this));
+                        // 入站处理器
+                        nioSocketChannel.pipeline().addLast(rpcResponseHandler);
+                        // 编码器
+                        nioSocketChannel.pipeline().addLast(new RPCEncoder());
+                    }
+                });
+    }
+
+    public Channel getChannel(InetSocketAddress inetSocketAddress) {
+        // 如果对应服务的 channel 不存在，则连接获取 channel
+        if (!channels.containsKey(inetSocketAddress)) {
+            try {
+                Channel channel = bootstrap
+                        .connect(inetSocketAddress)
+                        .sync()
+                        .channel();
+                channels.put(inetSocketAddress, channel);
+                channelsHelper.put(channel, inetSocketAddress);
+                logger.info("Netty 客户端连接服务: {}", inetSocketAddress);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+        }
+        return channels.get(inetSocketAddress);
+    }
+
+    @Override
+    public RpcResponse sendRPCRequest(RpcRequest request) {
+        try {
+            // 1. 异步结果
+            CompletableFuture<RpcResponse> completableFuture = new CompletableFuture<>();
+            rpcResponseHandler.setCompletableFuture(completableFuture);
+            // 2. 寻找服务所对应的 channel
+            InetSocketAddress address = getServiceDiscovery().discoverService(request);
+            Channel channel = getChannel(address);
+            // 3. 构造发送数据
+            RpcMessage rpcMessage = RpcMessage.builder()
+                    .magicNum(RpcConstant.MESSAGE_MAGIC_NUM)
+                    .version(RpcConstant.MESSAGE_VERSION)
+                    .messageType(RpcConstant.MESSAGE_TYPE_REQUEST)
+                    .serializeTpe(Serializer.SERIALIZER_KRYO)
+                    .data(request)
+                    .build();
+            channel.writeAndFlush(rpcMessage);
+            logger.info("Netty 客户端发送：[{}]", rpcMessage);
+            // 4. 接收异步调用结果
+            return completableFuture.get();
+        } catch (InterruptedException | ExecutionException e) {
+            throw new RuntimeException(e);
+        }
+    }
+}
+```
 
 **效果**：
 
