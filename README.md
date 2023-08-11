@@ -7,7 +7,7 @@
 
 一个 RPC 调用的模型如下图所示：
 
-![Untitled](docs\\quickrpc-调用模型图.png)
+![Untitled](docs/quickrpc-调用模型图.png)
 
 RPC的工作方式通常涉及两个主要角色：客户端和服务器。客户端发起一个请求，并通过网络发送到服务器端，服务器端接收到请求后执行相应的操作，然后将结果返回给客户端。客户端在接收到结果后继续执行其他操作。
 
@@ -20,7 +20,7 @@ RPC的工作方式通常涉及两个主要角色：客户端和服务器。客�
 
 上述只是一个 RPC 应有的过程，实际上，为了这个 RPC 的高可用等方面，需要做出很多其它方面的努力，比如经典的 Dubbo 架构图：
 
-![Untitled](docs\\quickrpc-Dubbo架构图.png)
+![Untitled](docs/quickrpc-Dubbo架构图.png)
 
 在 Dubbo 模型图中，Consumer 和 Provider 分别表示客户端和服务端，这个模型图提供了 Registry 服务注册中心，Monitor 监控中心来提高远程过程调用的高可用性，总而言之，Dubbo 是一个非常优秀的 RPC。
 
@@ -168,9 +168,9 @@ RPC的工作方式通常涉及两个主要角色：客户端和服务器。客�
 
 结果：
 
-![Untitled](docs\\quickrpc-v1-demo-server.png)
+![Untitled](docs/quickrpc-v1-demo-server.png)
 
-![Untitled](docs\\quickrpc-v1-demo-client.png)
+![Untitled](docs/quickrpc-v1-demo-client.png)
 
 缺点：
 
@@ -359,9 +359,9 @@ RPC的工作方式通常涉及两个主要角色：客户端和服务器。客�
 
 结果：
 
-![Untitled](docs\\quickrpc-v2-demo-server.png)
+![Untitled](docs/quickrpc-v2-demo-server.png)
 
-![Untitled](docs\\quickrpc-v2-demo-client.png)
+![Untitled](docs/quickrpc-v2-demo-client.png)
 
 缺点：
 
@@ -470,9 +470,9 @@ RPC的工作方式通常涉及两个主要角色：客户端和服务器。客�
 
 效果：
 
-![Untitled](docs\\quickrpc-v3-demo-client.png)
+![Untitled](docs/quickrpc-v3-demo-client.png)
 
-![Untitled](docs\\quickrpc-v3-demo-server.png)
+![Untitled](docs/quickrpc-v3-demo-server.png)
 
 缺点：
 
@@ -641,9 +641,9 @@ RPC的工作方式通常涉及两个主要角色：客户端和服务器。客�
 
 效果：
 
-![Untitled](docs\\quickrpc-v4-demo-server.png)
+![Untitled](docs/quickrpc-v4-demo-server.png)
 
-![Untitled](docs\\quickrpc-v4-demo-client.png)
+![Untitled](docs/quickrpc-v4-demo-client.png)
 
 优点：
 
@@ -816,9 +816,9 @@ RPC的工作方式通常涉及两个主要角色：客户端和服务器。客�
 
 结果：
 
-![Untitled](docs\\quickrpc-v5-demo-server.png)
+![Untitled](docs/quickrpc-v5-demo-server.png)
 
-![Untitled](docs\\quickrpc-v5-demo-client.png)
+![Untitled](docs/quickrpc-v5-demo-client.png)
 
 缺点：
 
@@ -943,9 +943,9 @@ RPC的工作方式通常涉及两个主要角色：客户端和服务器。客�
 
 效果：
 
-![Untitled](docs\\quickrpc-v6-demo-client.png)
+![Untitled](docs/quickrpc-v6-demo-client.png)
 
-![Untitled](docs\\quickrpc-v6-demo-server.png)
+![Untitled](docs/quickrpc-v6-demo-server.png)
 
 缺点：
 
@@ -1119,9 +1119,9 @@ RPC的工作方式通常涉及两个主要角色：客户端和服务器。客�
 
 效果：
 
-![Untitled](docs\\quickrpc-v7-demo-client.png)
+![Untitled](docs/quickrpc-v7-demo-client.png)
 
-![Untitled](docs\\quickrpc-v7-demo-server.png)
+![Untitled](docs/quickrpc-v7-demo-server.png)
 
 缺点：
 
@@ -1129,7 +1129,7 @@ RPC的工作方式通常涉及两个主要角色：客户端和服务器。客�
 
 - 而且 java 的编码器、解码器都已经不推荐使用了，我们可以采用 Netty 提供的一些编、解码器进行编码和解码工作，我们也可以自己定义一套编、解码器。
 
-  ![Untitled](docs\\quickrpc-v7-demo-useless.png)
+  ![Untitled](docs/quickrpc-v7-demo-useless.png)
 
 > 附：Netty 的日志有点耗费眼睛，我们可以关闭它，比如 logback 日志，那么在 resources 目录下配置 logback.xml 如下所示：
 >
@@ -1142,11 +1142,11 @@ RPC的工作方式通常涉及两个主要角色：客户端和服务器。客�
 >               <pattern>%date{HH:mm:ss.SSS} [%thread] %-5level %logger{36} -- %msg%n</pattern>
 >           </encoder>
 >       </appender>
->   
+>     
 >       <root level="info">
 >           <appender-ref ref="CONSOLE" />
 >       </root>
->   
+>     
 >       <!-- 设置Netty的日志级别为INFO -->
 >       <logger name="io.netty" level="INFO" />
 >   </configuration>
@@ -1551,9 +1551,9 @@ RPC的工作方式通常涉及两个主要角色：客户端和服务器。客�
 
 效果：
 
-![Untitled](docs\\quickrpc-v8-demo-server.png)
+![Untitled](docs/quickrpc-v8-demo-server.png)
 
-![Untitled](docs\\quickrpc-v8-demo-client.png)
+![Untitled](docs/quickrpc-v8-demo-client.png)
 
 缺点：
 
@@ -1569,7 +1569,7 @@ RPC的工作方式通常涉及两个主要角色：客户端和服务器。客�
 
 图示：
 
-![Untitled](docs\\quickrpc-v9-service-registry.png)
+![Untitled](docs/quickrpc-v9-service-registry.png)
 
 Zookeeper 应用：
 
@@ -1875,15 +1875,15 @@ Zookeeper 应用：
 
 **效果：**
 
-![Untitled](docs\\quickrpc-v9-demo-server.png)
+![Untitled](docs/quickrpc-v9-demo-server.png)
 
-![Untitled](docs\\quickrpc-v9-demo-client.png)
+![Untitled](docs/quickrpc-v9-demo-client.png)
 
 **缺点：**
 
 - 我们在提供服务时，总是选取服务的第一个提供者来提供服务，对第一个服务提供者压力很大，因此很有必要设计合理的负载均衡算法。
 
-  ![Untitled](docs\\quickrpc-v9-demo-other01.png)
+  ![Untitled](docs/quickrpc-v9-demo-other01.png)
 
 ### v10 版本【支持多种负载均衡算法】
 
@@ -2100,19 +2100,19 @@ private static final int port = 8890;
 
 **效果 1：随机法**
 
-![Untitled](docs\\quickrpc-v10-demo-random.png)
+![Untitled](docs/quickrpc-v10-demo-random.png)
 
 关闭全部后等待一段时间重启，可以吃个饭再来肝…
 
 **效果 2：轮询法**
 
-![Untitled](docs\\quickrpc-v10-demo-round.png)
+![Untitled](docs/quickrpc-v10-demo-round.png)
 
 结果从大到小排列，这是因为 `curator.getChildren().forPath("/" + serviceName);` 得到的结果由 ZooKeeper 而定。
 
 **效果 3：IP 哈希法**
 
-![Untitled](docs\\quickrpc-v10-demo-iphash.png)
+![Untitled](docs/quickrpc-v10-demo-iphash.png)
 
 **缺点：**
 
@@ -2512,19 +2512,19 @@ ch.pipeline().addLast(new ChannelDuplexHandler() {     // 注意 0 代表不做�
 
 正常清空：
 
-![Untitled](docs\\quickrpc-v12-demo-normal-server.png)
+![Untitled](docs/quickrpc-v12-demo-normal-server.png)
 
-![Untitled](docs\\quickrpc-v12-demo-normal-client.png)
+![Untitled](docs/quickrpc-v12-demo-normal-client.png)
 
 服务端断开：
 
-![Untitled](docs\\quickrpc-v12-demo-unconnect-client.png)
+![Untitled](docs/quickrpc-v12-demo-unconnect-client.png)
 
 重启服务端：
 
-![Untitled](docs\\quickrpc-v12-demo-reconnect-client.png)
+![Untitled](docs/quickrpc-v12-demo-reconnect-client.png)
 
-![Untitled](docs\\quickrpc-v12-demo-reconnect-server.png)
+![Untitled](docs/quickrpc-v12-demo-reconnect-server.png)
 
 未完待续…
 
