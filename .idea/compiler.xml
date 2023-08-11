@@ -6,8 +6,19 @@
         <sourceOutputDir name="target/generated-sources/annotations" />
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
-        <module name="rpc-sample" />
+        <module name="rpc-registry" />
+        <module name="rpc-common" />
+        <module name="rpc-serialization" />
+        <module name="rpc-client" />
+        <module name="rpc-server" />
+        <module name="rpc-api" />
+        <module name="dev-versions" />
+        <module name="rpc-remoting" />
       </profile>
     </annotationProcessing>
+    <bytecodeTargetLevel>
+      <module name="rpc-config" target="1.8" />
+      <module name="test" target="1.8" />
+    </bytecodeTargetLevel>
   </component>
 </project>
