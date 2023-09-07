@@ -27,6 +27,7 @@ public class RpcHeartbeatHandler extends SimpleChannelInboundHandler<RpcPing> {
         RpcMessage rpcMessage = RpcMessage.builder()
                 .magicNum(RpcConstant.MESSAGE_MAGIC_NUM)
                 .version(RpcConstant.MESSAGE_VERSION)
+                .reserve(RpcConstant.MESSAGE_RESERVE)
                 .messageType(RpcConstant.MESSAGE_TYPE_PONG)
                 .serializeTpe(Serializer.SERIALIZER_KRYO)
                 .data(pong)

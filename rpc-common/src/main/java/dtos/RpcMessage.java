@@ -1,7 +1,10 @@
 package dtos;
 
+import constants.RpcConstant;
 import lombok.Builder;
 import lombok.Data;
+
+import java.io.Serializable;
 
 /**
  * 通信消息
@@ -26,4 +29,6 @@ public class RpcMessage {
     private int messageLength;  // 消息总长
     private byte reserve;       // 保留字段
     private Object data;        // 消息数据
+
+
 }

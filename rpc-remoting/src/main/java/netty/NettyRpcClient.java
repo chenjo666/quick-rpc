@@ -89,8 +89,8 @@ public class NettyRpcClient extends AbstractRpcClient {
             RpcMessage rpcMessage = RpcMessage.builder()
                     .magicNum(RpcConstant.MESSAGE_MAGIC_NUM)
                     .version(RpcConstant.MESSAGE_VERSION)
-                    .messageType(RpcConstant.MESSAGE_TYPE_REQUEST)
                     .reserve(RpcConstant.MESSAGE_RESERVE)
+                    .messageType(RpcConstant.MESSAGE_TYPE_REQUEST)
                     .serializeTpe(Serializer.SERIALIZER_KRYO)
                     .data(request)
                     .build();

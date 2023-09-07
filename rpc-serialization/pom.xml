@@ -28,6 +28,7 @@
             <artifactId>kryo</artifactId>
             <version>4.0.2</version>
         </dependency>
+
         <dependency>
             <groupId>org.example</groupId>
             <artifactId>rpc-common</artifactId>
